@@ -299,7 +299,6 @@ class LanguageModelTrainer:
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             rand_pred = rand_pred.squeeze(1)
             idx = -1 if scores.shape[2] > 1 else None
-            pdb.set_trace()
             if rand_pred.shape[1] < 2:
                 loss = torch.Tensor([100]*rand_pred.shape[0])
             else:
