@@ -251,7 +251,6 @@ class LanguageModelTrainer:
             words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
             prediction.append(words)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
-        pdb.set_trace()
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
 
         # remove excess words
@@ -283,9 +282,10 @@ class LanguageModelTrainer:
             for t in range(max_len-2):
                 scores = scores.squeeze(1)
                 scores = F.softmax(scores, dim=1)  # batch, num_classes
-                words = torch.multinomial(scores, 1, replacement=False)
+                words = torch.multinomial(scores, 1, replacement=False).float()
                 rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
+            pdb.set_trace()
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             # remove excess words
             lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
