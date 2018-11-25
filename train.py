@@ -207,6 +207,7 @@ class LanguageModelTrainer:
         logging.info(t)
 
     def train_batch(self, inputs, targets):
+        inputs = inputs.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         scores = self.model(inputs, targets)
         loss = self.criterion(scores, targets[:, 1:])
         loss.backward()
@@ -268,6 +269,7 @@ class LanguageModelTrainer:
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
             prediction.append(rand_pred)
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
+            rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
             loss = float(loss(scores, rand_pred[:, 1:], ignore_index=-99))
             losses.append(loss)
 
