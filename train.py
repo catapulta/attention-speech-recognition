@@ -136,7 +136,7 @@ class LanguageModelTrainer:
                 #         print('No diff in {}'.format(key))
                 # print('Batch loss is ', float(loss))
 
-                targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)
+                targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
                 targets = targets.cuda() if torch.cuda.is_available() else targets
                 inputs = inputs.cuda() if torch.cuda.is_available() else inputs
 
