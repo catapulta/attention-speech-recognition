@@ -200,7 +200,9 @@ class DecoderRNN(nn.Module):
                 hiddens[i] = cell(x, hiddens[i])
                 out = hiddens[i]
                 # teacher forcing
-                x = F.gumbel_softmax(self.scoring(out), hard=True) if i == len(self.cells) - 1 else x
+                if i == len(self.cells) - 1:
+                    temp_out = self.scoring(out)
+                    x = F.gumbel_softmax(temp_out, hard=True)
             rnn_pred.append(out)
 
         rnn_pred = torch.stack(rnn_pred)
