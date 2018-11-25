@@ -269,7 +269,7 @@ class LanguageModelTrainer:
         :param max_len:
         :return:
         '''
-        loss = torch.nn.CrossEntropyLoss(reduction='sum')
+        criterion = torch.nn.CrossEntropyLoss(reduction='none')
 
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
@@ -300,9 +300,10 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
             assert rand_pred.shape[2] > 1, 'Targets must have at least 2 entries (including start and end chars)'
             idx = -1 if scores.shape[2] > 1 else None
-            loss = self.criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
+            loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
 
+        pdb.set_trace()
         losses = torch.stack(losses, dim=1)
         m, argminloss = torch.min(losses, dim=1)
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
