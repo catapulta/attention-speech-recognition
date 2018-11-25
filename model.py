@@ -171,8 +171,8 @@ class DecoderRNN(nn.Module):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
-                x_onehot = x_onehot.zero_
-                x = x_onehot.scatter_(x.long())
+                x_onehot = x_onehot.zero_()
+                x = x_onehot.scatter_(1, x.long(), 1)
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
 
@@ -194,7 +194,6 @@ class DecoderRNN(nn.Module):
             hiddens[0][:, :context.shape[2]] = context.squeeze(0)
             for i, cell in enumerate(self.cells):
                 x = hiddens[i - 1] if i > 0 else x
-                pdb.set_trace()
                 hiddens[i] = cell(x, hiddens[i])
                 out = hiddens[i]
                 # teacher forcing
