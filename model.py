@@ -168,14 +168,13 @@ class DecoderRNN(nn.Module):
             matrix_mask[i, 0, :mask] = 1
 
         rnn_pred = []
-        x_onehot = torch.FloatTensor(batch_size, self.num_chars)
         for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
+                x_onehot = torch.FloatTensor(batch_size, self.num_chars)
                 x_onehot = x_onehot.zero_()
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
-                print('max', x.max(), 'min', x.min())
                 x = x_onehot.scatter_(1, x, 1)
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
@@ -254,7 +253,7 @@ if __name__ == '__main__':
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 10
-    targets = [torch.ones(100)] * batches
+    targets = [torch.ones(1)] * batches
     inputs = [torch.ones((120, 40))] * batches
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
@@ -267,12 +266,12 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
-    criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=0)
+    criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=0)
     idx = -1 if scores.shape[2] > 1 else None
 
-    # targets = torch.cat((targets.long(), targets.long()), dim=1)
+    targets = torch.cat((targets.long(), targets.long()), dim=1)
     print(scores[:, :, :idx].shape, targets[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], targets[:, 1:].long())
     print(loss.shape)
-    # loss.backward()
-    # optimizer.step()
+    loss.backward()
+    optimizer.step()

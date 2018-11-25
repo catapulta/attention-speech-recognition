@@ -271,7 +271,7 @@ class LanguageModelTrainer:
         :param max_len:
         :return:
         '''
-        criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
+        criterion = torch.nn.CrossEntropyLoss(ignore_index=-99)
 
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
