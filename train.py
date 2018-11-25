@@ -194,6 +194,7 @@ class LanguageModelTrainer:
                     if self.best_rate > ls:
                         torch.save(self.model.state_dict(), "models/best.pt")
                         self.best_rate = ls
+                    self.model.train()
 
     def print_training(self, batch_num, batch_size, loss, batch_print):
         t = 'At {:.0f}% of epoch {}'.format(
@@ -215,7 +216,6 @@ class LanguageModelTrainer:
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
-        # print([i for i in model.cnn.modules()][1].__dict__['_parameters']['weight'][0])
         return float(loss)  # avoid autograd retention
 
     def test(self):
@@ -233,7 +233,7 @@ class LanguageModelTrainer:
         prediction.append(starts)
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
         for i in range(max_len-1):
-            words = torch.argmax(scores, dim=1)
+            words = torch.argmax(scores, dim=1).float()
             prediction.append(words)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
         prediction = torch.stack(prediction, dim=1)

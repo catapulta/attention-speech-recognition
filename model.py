@@ -201,7 +201,6 @@ class DecoderRNN(nn.Module):
                 out = hiddens[i]
                 # teacher forcing
                 if i == len(self.cells) - 1:
-                    print(out.shape)
                     temp_out = self.scoring(out)
                     x = F.gumbel_softmax(temp_out, hard=True)
             rnn_pred.append(out)
