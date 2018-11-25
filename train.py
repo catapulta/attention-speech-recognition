@@ -244,6 +244,7 @@ class LanguageModelTrainer:
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
+        print(prediction)
         return prediction, lens
 
     def gen_random_search(self, data_batch, random_paths, max_len):
