@@ -77,8 +77,8 @@ class Levenshtein:
     def forward(self, prediction, target):
         ls = 0.
         for i in range(len(target)):
-            pred = "".join(self.label_map[j-1] for j in prediction[i].numpy())
-            true = "".join(self.label_map[j-1] for j in target[i].numpy())
+            pred = "".join(self.label_map[j-1] for j in prediction[i].long())
+            true = "".join(self.label_map[j-1] for j in target[i].long())
             ls += L.distance(pred, true)
         return ls
 
