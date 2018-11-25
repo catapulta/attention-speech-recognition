@@ -201,6 +201,7 @@ class DecoderRNN(nn.Module):
                 out = hiddens[i]
                 # teacher forcing
                 if i == len(self.cells) - 1:
+                    print(out.shape)
                     temp_out = self.scoring(out)
                     x = F.gumbel_softmax(temp_out, hard=True)
             rnn_pred.append(out)
@@ -248,14 +249,16 @@ if __name__ == '__main__':
         # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
         #           [torch.ones(20), torch.ones(1)]).shape)
 
-    with torch.no_grad():
-        enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
-    targets = [torch.ones(20), torch.ones(1)]
-    scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
+    # with torch.no_grad():
+    #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
+    # targets = [torch.ones(20), torch.ones(1)]
+    targets = [torch.ones(20)]
+    # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
+    scores = las([torch.ones((120, 40))], targets)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
-    # optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
-    optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
+    optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
+    # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
     criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
     print(scores.shape)
     loss = criterion(scores, targets[:, 1:].long())

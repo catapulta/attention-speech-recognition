@@ -169,6 +169,7 @@ class LanguageModelTrainer:
             epochs_print = 1
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
                 with torch.no_grad():
+                    self.model.eval()
                     t = "#########  Epoch {} #########".format(self.epochs)
                     print(t)
                     logging.info(t)
