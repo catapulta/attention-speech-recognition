@@ -298,10 +298,10 @@ class LanguageModelTrainer:
             # compute loss
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             idx = -1 if scores.shape[2] > 1 else None
+            pdb.set_trace()
             loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
 
-        pdb.set_trace()
         losses = torch.stack(losses, dim=1)
         m, argminloss = torch.min(losses, dim=1)
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
