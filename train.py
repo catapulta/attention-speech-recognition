@@ -216,9 +216,7 @@ class LanguageModelTrainer:
     def train_batch(self, inputs, targets):
         print('input size', (len(inputs), len(inputs[0])))
         input_targets = targets.clone()
-        input_targets[targets == -99] = len(self.chars)
-        print(input_targets)
-        print(input_targets.min())
+        input_targets[targets == -99] = len(self.chars)-1
         scores = self.model(inputs, input_targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'

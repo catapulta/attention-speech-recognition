@@ -170,12 +170,12 @@ class DecoderRNN(nn.Module):
         rnn_pred = []
         for t in range(lens[0]):
             # teacher forcing
-            # TODO
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
                 x_onehot = torch.FloatTensor(batch_size, self.num_chars)
                 x_onehot = x_onehot.zero_()
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
+                pdb.set_trace()
                 x = x_onehot.scatter_(1, x, 1)
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
@@ -260,10 +260,14 @@ if __name__ == '__main__':
     scores = las(inputs, targets)
     print(scores.shape)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
+
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
+    input_targets = targets.clone()
+    input_targets[targets == -99] = 33
+
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
-    criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
+    criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=0)
     idx = -1 if scores.shape[2] > 1 else None
 
     fake_target = torch.cat((targets.long(), targets.long()), dim=1)
