@@ -306,7 +306,7 @@ if __name__ == '__main__':
     NUM_EPOCHS = 1
     BATCH_SIZE = 64
 
-    model = model.LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
+    model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
                  decoder_hidden=512, cnn_compression=2, enc_bidirectional=True, teacher=0.0)
 
     def load_my_state_dict(net, state_dict):
