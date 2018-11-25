@@ -170,6 +170,7 @@ class DecoderRNN(nn.Module):
         rnn_pred = []
         for t in range(lens[0]):
             # teacher forcing
+            # TODO
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
                 x_onehot = torch.FloatTensor(batch_size, self.num_chars)

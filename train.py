@@ -137,7 +137,7 @@ class LanguageModelTrainer:
                 #         print('No diff in {}'.format(key))
                 # print('Batch loss is ', float(loss))
 
-                targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
+                targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)
                 targets = targets.cuda() if torch.cuda.is_available() else targets
                 inputs = inputs.cuda() if torch.cuda.is_available() else inputs
                 # train
@@ -230,7 +230,7 @@ class LanguageModelTrainer:
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, 100, 190)
-                pred = [self.chars[j] for j in pred]
+                pred = [self.chars[j] for j in pred.long()]
                 preds.append(pred)
             return preds
 
