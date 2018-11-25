@@ -232,7 +232,7 @@ class LanguageModelTrainer:
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, 100, 190)
-                pred = [self.chars[j] for j in pred.long()]
+                pred = [self.chars[j.long()] for j in pred]
                 preds.append(pred)
             return preds
 
