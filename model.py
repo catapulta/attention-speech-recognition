@@ -153,7 +153,7 @@ class DecoderRNN(nn.Module):
     def forward(self, seq_list, keys, values, masks):
 
         batch_size = len(seq_list)
-        lens = [len(s) for s in seq_list]  # lens of all inputs (sorted by loader)
+        lens = [len(s)-1 for s in seq_list]  # lens of all inputs (sorted by loader)
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
@@ -167,7 +167,7 @@ class DecoderRNN(nn.Module):
 
         rnn_pred = []
         x_onehot = torch.FloatTensor(batch_size, self.num_chars)
-        for t in range(lens[0] - 1):
+        for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
@@ -239,8 +239,8 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
-        print(enc_out[0].shape)
-        print(dec([torch.ones((3)), torch.ones((2))], enc_out[0], enc_out[1], enc_out[3]).shape)
-        print(dec([torch.ones((3)), torch.ones((2))], enc_out[0], enc_out[1], enc_out[3]))
-        print(las([torch.ones((120, 40)), torch.ones((90, 40))],
-                  [torch.ones((20)), torch.ones((1))]).shape)
+        # print(enc_out[0].shape)
+        print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
+        # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]))
+        # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
+        #           [torch.ones(20), torch.ones(1)]).shape)
