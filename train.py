@@ -85,7 +85,7 @@ class Levenshtein:
 
 # model trainer
 class LanguageModelTrainer:
-    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1, chars=character_list.LETTERS):
+    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1, chars=['<>'] + character_list.LETTERS):
         self.model = model.cuda() if torch.cuda.is_available() else model
         self.chars = chars
         self.loader = loader
@@ -285,7 +285,6 @@ class LanguageModelTrainer:
                 words = torch.multinomial(scores, 1, replacement=False).float()
                 rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
-            pdb.set_trace()
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             # remove excess words
             lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
@@ -297,7 +296,9 @@ class LanguageModelTrainer:
             prediction.append(rand_pred)
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-            loss = float(loss(scores, rand_pred[:, 1:]))
+            assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
+            idx = -1 if scores.shape[2] > 1 else None
+            loss = self.criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
 
         losses = torch.stack(losses, dim=1)
