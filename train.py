@@ -20,12 +20,13 @@ class UtteranceDataset(Dataset):
         self.test = test
         self.data = np.load(data_path, encoding='latin1')
         labels = np.load(label_path) if not test else None  # index labels from 1 to n_labels
-        self.labels = []
-        for words in labels:
-            words = np.array([0]
-                             + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
-                             + [0])
-            self.labels.append(words)
+        if labels is not None:
+            self.labels = []
+            for words in labels:
+                words = np.array([0]
+                                 + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
+                                 + [0])
+                self.labels.append(words)
         self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
         self.num_entries = int(len(self.data)*.001) if not 'test' in data_path else int(len(self.data)*.1)
