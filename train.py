@@ -244,13 +244,12 @@ class LanguageModelTrainer:
         prediction = []  # store predictions
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
-        prediction.append(torch.cat(starts, dim=0))
+        prediction.append(torch.stack(starts, dim=0))
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         for i in range(max_len-2):
             scores = scores.squeeze(1)
             words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
             prediction.append(words)
-            print(words.shape)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         pdb.set_trace()
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
@@ -279,7 +278,7 @@ class LanguageModelTrainer:
         losses = []
         for iter in range(random_paths):
             rand_pred = []  # store batch_preds
-            rand_pred.append(torch.cat(starts, dim=0))
+            rand_pred.append(torch.stack(starts, dim=0))
             scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
             for t in range(max_len-2):
                 scores = scores.squeeze(1)
