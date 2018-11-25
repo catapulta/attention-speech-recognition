@@ -161,9 +161,11 @@ class DecoderRNN(nn.Module):
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
-        hiddens = []
+        # hiddens = nn.ParameterList()
+        # for hidden in self.init_hidden:
+        #     hiddens.append(hidden.expand(batch_size, -1).contiguous())
         for hidden in self.init_hidden:
-            hiddens.append(hidden.expand(batch_size, -1).contiguous())
+            hidden.expand(batch_size, -1)
         first_hidden = self.first_hidden.expand(batch_size, -1).contiguous()
 
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
@@ -182,7 +184,7 @@ class DecoderRNN(nn.Module):
                 x = x.cuda() if torch.cuda.is_available() else x
                 x = x_onehot.scatter_(1, x, 1)
 
-            print(hiddens[-1].is_cuda)
+            print('-1', hiddens[-1].is_cuda, 'first', first_hidden.is_cuda)
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
 
             # attention calculation
