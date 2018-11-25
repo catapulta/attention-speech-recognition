@@ -300,7 +300,7 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.squeeze(1)
             idx = -1 if scores.shape[2] > 1 else None
             pdb.set_trace()
-            if rand_pred.shape[1] < 1:
+            if rand_pred.shape[1] < 2:
                 loss = torch.Tensor([100]*rand_pred.shape[0])
             else:
                 loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
