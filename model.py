@@ -174,7 +174,8 @@ class DecoderRNN(nn.Module):
                 x = seq_list[:, t]
                 x_onehot = torch.FloatTensor(batch_size, self.num_chars)
                 x_onehot = x_onehot.zero_()
-                print(x_onehot.max())
+                print('max', x_onehot.max())
+                print('min', x_onehot.min())
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
                 x = x_onehot.scatter_(1, x, 1)
 
