@@ -27,7 +27,7 @@ class UtteranceDataset(Dataset):
                                  + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
                                  + [0])
                 self.labels.append(words)
-        self.labels = np.array(self.labels)
+            self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
         self.num_entries = int(len(self.data)*.001) if not 'test' in data_path else int(len(self.data)*.1)
 
