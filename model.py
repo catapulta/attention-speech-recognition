@@ -175,7 +175,6 @@ class DecoderRNN(nn.Module):
                 x_onehot = torch.FloatTensor(batch_size, self.num_chars)
                 x_onehot = x_onehot.zero_()
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
-                pdb.set_trace()
                 x = x_onehot.scatter_(1, x, 1)
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
@@ -263,7 +262,7 @@ if __name__ == '__main__':
 
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
     input_targets = targets.clone()
-    input_targets[targets == -99] = 33
+    input_targets[targets == -99] = 33-1
 
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
