@@ -247,7 +247,7 @@ class LanguageModelTrainer:
         prediction.append(torch.cat(starts, dim=0))
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         for i in range(max_len-2):
-            scores = scores.squeeze(0)
+            scores = scores.squeeze(1)
             words = torch.argmax(scores, dim=1).float()  # batch, 1
             prediction.append(words)
             print(words.shape)
@@ -282,7 +282,7 @@ class LanguageModelTrainer:
             rand_pred.append(torch.cat(starts, dim=0))
             scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
             for t in range(max_len-2):
-                scores = scores.squeeze(0)
+                scores = scores.squeeze(1)
                 scores = F.softmax(scores, dim=1)  # batch, num_classes
                 words = torch.multinomial(scores, 1, replacement=False)
                 rand_pred.append(words)
