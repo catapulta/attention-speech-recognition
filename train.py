@@ -101,6 +101,7 @@ class LanguageModelTrainer:
         self.generated_test = []
         self.epochs = 0
         self.max_epochs = max_epochs
+        self.steps = 0
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
@@ -139,10 +140,13 @@ class LanguageModelTrainer:
                 targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
                 targets = targets.cuda() if torch.cuda.is_available() else targets
                 inputs = inputs.cuda() if torch.cuda.is_available() else inputs
-
+                # train
                 loss = self.train_batch(inputs, targets)
                 epoch_loss += loss
                 training_epoch_loss += loss
+                self.steps += 1
+                if self.steps % 1e6 == 0:
+                    self.model.decoder.teacher = min(self.model.decoder.teacher + 0.1, 0.4)
                 # training print
                 batch_print = 40
                 if batch_num % batch_print == 0 and batch_num != 0:
@@ -241,7 +245,7 @@ class LanguageModelTrainer:
         # remove excess words
         lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
         assert len(lens) == len(prediction), 'lens and prediction dont match'
-        prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
+        prediction = [prediction[i, :lens[i]] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
         return prediction, lens
@@ -249,7 +253,7 @@ class LanguageModelTrainer:
     def gen_random_search(self, data_batch, random_paths, max_len):
         loss = torch.nn.CrossEntropyLoss(reduction='sum')
 
-        enc_out = self.model.decoder(data_batch)
+        enc_out = self.model.encoder(data_batch)
         starts = torch.zeros(1, len(self.chars)+1)
         prediction = []  # store predictions
         losses = []
@@ -262,8 +266,8 @@ class LanguageModelTrainer:
                 words = torch.multinomial(scores, 1, replacement=False)
                 rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
-            rand_pred = torch.stack(rand_pred, dim=1)
-            lens = torch.argmin(rand_pred, dim=1).tolist()  # finds the 0s in the prediction
+            rand_pred = torch.stack(rand_pred, dim=1).squeeze(0)
+            lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
