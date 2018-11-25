@@ -128,6 +128,8 @@ class DecoderRNN(nn.Module):
                 input_size = hidden_size = self.hidden_size
             self.init_hidden.append(torch.nn.Parameter(torch.randn((1, hidden_size))))
             self.cells.append(torch.nn.GRUCell(input_size, hidden_size, bias=True))
+        self.cells = nn.ModuleList(self.cells)
+        self.init_hidden = nn.ParameterList(self.init_hidden)
 
         # create attention
         self.query = nn.Linear(self.hidden_size, self.key_size)
