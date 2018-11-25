@@ -181,9 +181,9 @@ class LanguageModelTrainer:
                     lens = 0
                     for j, (val_inputs, val_labels) in (enumerate(self.val_loader)):
                         idx = np.random.randint(0, len(val_inputs))
-                        print('Ground', ''.join([self.chars[j-1] for j in val_labels[idx]]))
+                        print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
                         val_output, feature_lengths = self.gen_greedy_search(val_inputs, 190)
-                        print('Pred', ''.join([self.chars[j-1] for j in val_output[idx].long()]))
+                        print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
                         ls += self.LD.forward(val_output, val_labels)
                         lens += len(val_inputs)
                     ls /= lens
@@ -216,7 +216,7 @@ class LanguageModelTrainer:
         print('input size', (len(inputs), len(inputs[0])))
         scores = self.model(inputs, targets)
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-        assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
+        assert targets.shape[2] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         idx = -1 if scores.shape[2] > 1 else None
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
         loss.backward()
@@ -230,7 +230,7 @@ class LanguageModelTrainer:
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, 100, 190)
-                pred = [self.chars[j - 1] for j in pred]
+                pred = [self.chars[j] for j in pred]
                 preds.append(pred)
             return preds
 
@@ -292,11 +292,13 @@ class LanguageModelTrainer:
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
             rand_pred = [rand_pred[i] for i in seq_order]
-            scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
             prediction.append(rand_pred)
+            # compute scores given the predicted sequence
+            scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
+            # compute loss
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-            assert rand_pred.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
+            assert rand_pred.shape[2] > 1, 'Targets must have at least 2 entries (including start and end chars)'
             idx = -1 if scores.shape[2] > 1 else None
             loss = self.criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
