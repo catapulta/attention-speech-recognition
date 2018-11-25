@@ -298,13 +298,17 @@ class LanguageModelTrainer:
             # compute scores given the predicted sequence
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
             # compute loss
-            rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
-            rand_pred = rand_pred.squeeze(1)
-            idx = -1 if scores.shape[2] > 1 else None
-            if rand_pred.shape[1] < 2:
-                loss = torch.Tensor([100]*rand_pred.shape[0])
+            # rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
+            # rand_pred = rand_pred.squeeze(1)
+            # idx = -1 if scores.shape[2] > 1 else None
+            # if rand_pred.shape[1] < 2:
+            #     loss = torch.Tensor([100]*rand_pred.shape[0])
+            if len(rand_pred[0]) < 2:
+                loss = torch.Tensor([100]*len(rand_pred))
             else:
-                loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
+                loss = [criterion(scores[i, :, :len(rand_pred[i, 1:])], rand_pred[i, 1:].long()) for i in range(len(rand_pred))]
+                loss = torch.cat(loss)
+                # loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
 
         losses = torch.stack(losses, dim=1)
