@@ -180,6 +180,7 @@ class DecoderRNN(nn.Module):
                 x = x.cuda() if torch.cuda.is_available() else x
                 x = x_onehot.scatter_(1, x, 1)
 
+            print(type(hiddens[-1]))
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
 
             # attention calculation
