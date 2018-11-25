@@ -296,6 +296,7 @@ def write_results(results):
             f.write(','.join([str(i), r]))
             f.write('\n')
 
+
 if __name__ == '__main__':
     import os.path
     import logger
