@@ -251,6 +251,7 @@ class LanguageModelTrainer:
             words = torch.argmax(scores, dim=1).float().unsqueeze(0)  # batch, 1
             prediction.append(words)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+        pdb.set_trace()
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
 
         # remove excess words
