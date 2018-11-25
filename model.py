@@ -160,7 +160,7 @@ class DecoderRNN(nn.Module):
 
         hiddens = []
         for hidden in self.init_hidden:
-            hiddens.append(hidden.expand(batch_size, -1)).contiguous()
+            hiddens.append(hidden.expand(batch_size, -1).contiguous())
         first_hidden = self.first_hidden.expand(batch_size, -1).contiguous()
 
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
