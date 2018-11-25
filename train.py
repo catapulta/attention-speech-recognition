@@ -223,12 +223,14 @@ class LanguageModelTrainer:
         return float(loss)  # avoid autograd retention
 
     def test(self):
-        preds = []
-        for i, inputs in enumerate(self.test_loader):
-            pred = self.gen_random_search(inputs, 100, 190)
-            pred = [self.chars[j - 1] for j in pred]
-            preds.append(pred)
-        return preds
+        with torch.no_grad():
+            self.model.eval()
+            preds = []
+            for i, inputs in enumerate(self.test_loader):
+                pred = self.gen_random_search(inputs, 100, 190)
+                pred = [self.chars[j - 1] for j in pred]
+                preds.append(pred)
+            return preds
 
     def gen_greedy_search(self, data_batch, max_len):
         prediction = []  # store predictions
