@@ -172,7 +172,6 @@ class DecoderRNN(nn.Module):
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
                 x_onehot = x_onehot.zero_()
-                pdb.set_trace()
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
                 x = x_onehot.scatter_(1, x, 1)
 
