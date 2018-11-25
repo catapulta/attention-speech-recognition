@@ -219,7 +219,7 @@ class DecoderRNN(nn.Module):
 
 
 class LAS(nn.Module):
-    def __init__(self, num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
+    def __init__(self, num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
                  decoder_hidden=512, cnn_compression=2, enc_bidirectional=True, teacher=0.4):
         super(LAS, self).__init__()
         self.encoder = EncoderCNN(key_size=key_size, value_size=value_size, nlayers=encoder_depth,

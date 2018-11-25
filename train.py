@@ -16,7 +16,8 @@ logging.basicConfig(filename='train.log', level=logging.DEBUG)
 class UtteranceDataset(Dataset):
     def __init__(self, data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy', test=False):
         self.letter_dict = {j: i + 1 for i, j in enumerate(character_list.LETTERS)}
-        self.letter_dict['<>'] = 0
+        self.letter_dict['<'] = 0
+        self.letter_dict['>'] = len(self.letter_dict)
         self.test = test
         self.data = np.load(data_path, encoding='latin1')
         labels = np.load(label_path) if not test else None  # index labels from 1 to n_labels
@@ -25,7 +26,7 @@ class UtteranceDataset(Dataset):
             for words in labels:
                 words = np.array([0]
                                  + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
-                                 + [0])
+                                 + [len(self.letter_dict)])
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
@@ -77,15 +78,15 @@ class Levenshtein:
     def forward(self, prediction, target):
         ls = 0.
         for i in range(len(target)):
-            pred = "".join(self.label_map[j-1] for j in prediction[i].long())
-            true = "".join(self.label_map[j-1] for j in target[i].long())
+            pred = "".join(self.label_map[j] for j in prediction[i].long())
+            true = "".join(self.label_map[j] for j in target[i].long())
             ls += L.distance(pred, true)
         return ls
 
 
 # model trainer
 class LanguageModelTrainer:
-    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1, chars=['<>'] + character_list.LETTERS):
+    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1, chars=['<'] + character_list.LETTERS + ['>']):
         self.model = model.cuda() if torch.cuda.is_available() else model
         self.chars = chars
         self.loader = loader
@@ -214,6 +215,8 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         print('input size', (len(inputs), len(inputs[0])))
+        input_targets = targets.copy()
+        input_targets[targets == -99] = len(self.chars)
         scores = self.model(inputs, targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
@@ -341,7 +344,7 @@ if __name__ == '__main__':
     NUM_EPOCHS = 1
     BATCH_SIZE = 64
 
-    model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
+    model = LAS(num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
                  decoder_hidden=512, cnn_compression=2, enc_bidirectional=True, teacher=0.0)
 
     def load_my_state_dict(net, state_dict):
