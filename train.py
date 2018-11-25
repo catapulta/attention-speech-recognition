@@ -327,9 +327,9 @@ if __name__ == '__main__':
         model = load_my_state_dict(model, pretrained_dict)
         print('Checkpoint weights loaded.')
 
-    utdst = UtteranceDataset(data_path=r'.\data\train.npy', label_path=r'.\data\train_transcripts.npy')
-    val_utdst = UtteranceDataset(data_path=r'.\data\dev.npy', label_path=r'.\data\dev_transcripts.npy')
-    test_utdst = UtteranceDataset(r'.\data\test.npy', test=True)
+    utdst = UtteranceDataset(data_path='./data/train.npy', label_path='./data/train_transcripts.npy')
+    val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
+    test_utdst = UtteranceDataset('./data/test.npy', test=True)
     loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=6)
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=6)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
