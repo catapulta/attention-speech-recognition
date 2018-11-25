@@ -179,7 +179,7 @@ class LanguageModelTrainer:
                         idx = np.random.randint(0, len(val_inputs))
                         print('Ground', ''.join([self.chars[j-1] for j in val_labels[idx]]))
                         val_output, feature_lengths = self.gen_greedy_search(val_inputs, 190)
-                        print('Pred', ''.join([self.chars[j-1] for j in val_output[idx:idx + 1]]))
+                        print('Pred', ''.join([self.chars[j-1] for j in val_output[idx].long()]))
                         ls += self.LD.forward(val_output, val_labels)
                         lens += len(val_inputs)
                     ls /= lens
@@ -244,7 +244,6 @@ class LanguageModelTrainer:
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
-        print(prediction)
         return prediction, lens
 
     def gen_random_search(self, data_batch, random_paths, max_len):
