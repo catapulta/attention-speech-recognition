@@ -15,7 +15,7 @@ logging.basicConfig(filename='train.log', level=logging.DEBUG)
 # data loader
 class UtteranceDataset(Dataset):
     def __init__(self, data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy', test=False):
-        self.letter_dict = {j: i + 1 for i, j in enumerate(['<'] + character_list.LETTERS + ['>'])}
+        self.letter_dict = {j: i for i, j in enumerate(['<'] + character_list.LETTERS + ['>'])}
         self.test = test
         self.data = np.load(data_path, encoding='latin1')
         labels = np.load(label_path) if not test else None  # index labels from 1 to n_labels
