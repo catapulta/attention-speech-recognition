@@ -230,7 +230,7 @@ class LAS(nn.Module):
     def forward(self, input, target):
         enc_out = self.encoder(input)
         out = self.decoder(target, enc_out[0], enc_out[1], enc_out[3])
-        return out
+        return out  # batch, max_len, num_chars
 
 
 if __name__ == '__main__':
@@ -251,8 +251,8 @@ if __name__ == '__main__':
     # with torch.no_grad():
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
-    las.eval()
-    batches = 1
+    # las.eval()
+    batches = 10
     targets = [torch.ones(1)] * batches
     inputs = [torch.ones((120, 40))] * batches
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
@@ -262,11 +262,12 @@ if __name__ == '__main__':
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
-    criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
+    criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
     idx = -1 if scores.shape[2] > 1 else None
 
     fake_target = torch.cat((targets.long(), targets.long()), dim=1)
-    print(scores[:, :, :idx].shape, fake_target.shape)
+    print(scores[:, :, :idx].shape, fake_target[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], fake_target[:, 1:])
-    loss.backward()
-    optimizer.step()
+    print(loss.shape)
+    # loss.backward()
+    # optimizer.step()

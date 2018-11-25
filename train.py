@@ -214,9 +214,9 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         print('input size', (len(inputs), len(inputs[0])))
-        scores = self.model(inputs, targets)
+        scores = self.model(inputs, targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-        assert targets.shape[2] > 1, 'Targets must have at least 2 entries (including start and end chars)'
+        assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         idx = -1 if scores.shape[2] > 1 else None
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
         loss.backward()
@@ -269,7 +269,7 @@ class LanguageModelTrainer:
         :param max_len:
         :return:
         '''
-        criterion = torch.nn.CrossEntropyLoss(reduction='none')
+        criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
 
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
@@ -297,8 +297,6 @@ class LanguageModelTrainer:
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
             # compute loss
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
-            rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-            assert rand_pred.shape[2] > 1, 'Targets must have at least 2 entries (including start and end chars)'
             idx = -1 if scores.shape[2] > 1 else None
             loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
