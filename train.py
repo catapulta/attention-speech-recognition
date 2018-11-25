@@ -228,7 +228,7 @@ class LanguageModelTrainer:
     def gen_greedy_search(self, data_batch, max_len):
         prediction = []  # store predictions
         enc_out = self.model.encoder(data_batch)
-        starts = torch.zeros(1, 31)
+        starts = torch.zeros(1, len(self.chars)+1)
         prediction.append(starts)
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
         for i in range(max_len-1):
