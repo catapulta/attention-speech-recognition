@@ -114,6 +114,7 @@ class DecoderRNN(nn.Module):
         self.nlayers = nlayers
 
         # create RNN
+        self.first_hidden = torch.nn.Parameter(torch.randn((1, self.hidden_size)))
         self.init_hidden = []
         self.cells = []
         for i in range(self.nlayers):
@@ -160,17 +161,18 @@ class DecoderRNN(nn.Module):
         hiddens = []
         for hidden in self.init_hidden:
             hiddens.append(hidden.expand(batch_size, -1))
+        first_hidden = self.first_hidden.expand(batch_size, -1)
 
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
             matrix_mask[i, 0, :mask] = 1
 
         rnn_pred = []
-        x_onehot = torch.FloatTensor(batch_size, self.num_chars)
         for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
+                x_onehot = torch.FloatTensor(batch_size, self.num_chars)
                 x_onehot = x_onehot.zero_()
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
                 x = x_onehot.scatter_(1, x, 1)
@@ -192,7 +194,7 @@ class DecoderRNN(nn.Module):
             context = torch.bmm(attention, values.permute(1, 0, 2))  # batch_size, 1, value_size
             context = context.permute(1, 0, 2)  # 1, batch_size, value_size
 
-            hiddens[0][:, :context.shape[2]] = context.squeeze(0)
+            hiddens[0] = torch.cat([context.squeeze(0), first_hidden], dim=1)
             for i, cell in enumerate(self.cells):
                 x = hiddens[i - 1] if i > 0 else x
                 hiddens[i] = cell(x, hiddens[i])
@@ -236,10 +238,25 @@ if __name__ == '__main__':
     dec = DecoderRNN(len(character_list.LETTERS) + 1)
     las = LAS()
 
-    with torch.no_grad():
-        enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
+    # with torch.no_grad():
+        # enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
         # print(enc_out[0].shape)
-        print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
+        # print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
         # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]))
         # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
         #           [torch.ones(20), torch.ones(1)]).shape)
+
+    with torch.no_grad():
+        enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
+    targets = [torch.ones(20), torch.ones(1)]
+    scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
+    scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
+    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
+    # optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
+    optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
+    criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
+    print(scores.shape)
+    loss = criterion(scores, targets[:, 1:].long())
+    loss.backward()
+    optimizer.step()
+
