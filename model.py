@@ -154,7 +154,7 @@ class DecoderRNN(nn.Module):
     def forward(self, seq_list, keys, values, masks):
 
         batch_size = len(seq_list)
-        lens = [len(s)-1 for s in seq_list]  # lens of all inputs (sorted by loader)
+        lens = [len(s) for s in seq_list]  # lens of all inputs (sorted by loader)
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
@@ -168,6 +168,7 @@ class DecoderRNN(nn.Module):
             matrix_mask[i, 0, :mask] = 1
 
         rnn_pred = []
+        print(lens[0])
         for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
@@ -252,16 +253,19 @@ if __name__ == '__main__':
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
     las.eval()
-    targets = [torch.ones(20)]
+    batches = 1
+    targets = [torch.ones(1)] * batches
+    inputs = [torch.ones((120, 40))] * batches
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
-    scores = las([torch.ones((120, 40))], targets)
+    scores = las(inputs, targets)
     print(scores.shape)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
     criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
-    loss = criterion(scores, targets[:, 1:].long())
+    print(scores.shape, targets.shape)
+    idx = -1 if scores.shape[2]>1 else None
+    loss = criterion(scores[:, :, :idx], targets.long())
     loss.backward()
     optimizer.step()
-

@@ -235,15 +235,16 @@ class LanguageModelTrainer:
     def gen_greedy_search(self, data_batch, max_len):
         prediction = []  # store predictions
         enc_out = self.model.encoder(data_batch)
-        starts = torch.zeros(1, len(self.chars)+1)
+        starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
         prediction.append(starts)
-        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3]) # batch, max_len, num_chars
+        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+        scores = scores.squeeze(0)
         for i in range(max_len-1):
             pdb.set_trace()
-            words = torch.argmax(scores, dim=2).float()
+            words = torch.argmax(scores, dim=1).float().squeeze(1)  # batch, 1
             prediction.append(words)
-            scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
-        prediction = torch.stack(prediction, dim=1).squeeze(0)
+            scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1
+        prediction = torch.stack(prediction, dim=1)  # batch, max_len
 
         # remove excess words
         lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
@@ -257,7 +258,7 @@ class LanguageModelTrainer:
         loss = torch.nn.CrossEntropyLoss(reduction='sum')
 
         enc_out = self.model.encoder(data_batch)
-        starts = torch.zeros(1, len(self.chars)+1)
+        starts = [torch.zeros(len(self.chars)+1)]*len(data_batch)
         prediction = []  # store predictions
         losses = []
         for iter in range(random_paths):
