@@ -255,7 +255,7 @@ class LanguageModelTrainer:
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
 
         # remove excess words
-        lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
+        lens = torch.argmin(prediction, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -287,7 +287,8 @@ class LanguageModelTrainer:
                 rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
-            lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
+            # remove excess words
+            lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
