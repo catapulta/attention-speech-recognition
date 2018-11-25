@@ -208,6 +208,7 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         scores = self.model(inputs, targets)
+        pdb.set_trace()
         loss = self.criterion(scores, targets[:, 1:])
         loss.backward()
         self.optimizer.step()
