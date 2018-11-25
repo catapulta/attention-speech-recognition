@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
 import character_list
-# import Levenshtein as L
+import Levenshtein as L
 import logging
 from model import LAS
 import pdb
