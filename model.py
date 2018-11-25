@@ -115,7 +115,6 @@ class DecoderRNN(nn.Module):
 
         # create RNN
         self.first_hidden = torch.nn.Parameter(torch.randn((1, self.hidden_size)))
-        self.first_hidden = self.first_hidden.cuda() if torch.cuda.is_available() else self.first_hidden
         self.init_hidden = []
         self.cells = []
         for i in range(self.nlayers):
@@ -127,13 +126,8 @@ class DecoderRNN(nn.Module):
                 hidden_size = self.hidden_size
             else:
                 input_size = hidden_size = self.hidden_size
-
-            h = torch.nn.Parameter(torch.randn((1, hidden_size)))
-            h = h.cuda() if torch.cuda.is_available() else h
-            self.init_hidden = self.init_hidden.append(h)
-            cell = torch.nn.GRUCell(input_size, hidden_size, bias=True)
-            cell = cell.cuda() if torch.cuda.is_available() else cell
-            self.cells.append(cell)
+            self.init_hidden.append(torch.nn.Parameter(torch.randn((1, hidden_size))))
+            self.cells.append(torch.nn.GRUCell(input_size, hidden_size, bias=True))
 
         # create attention
         self.query = nn.Linear(self.hidden_size, self.key_size)
@@ -149,7 +143,6 @@ class DecoderRNN(nn.Module):
             nn.Sigmoid(),
             nn.Linear(self.hidden_size, self.num_chars)
         )
-        self.scoring = self.scoring if torch.cuda.is_available() else self.scoring
 
         # initialize
         for m in self.modules():
