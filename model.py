@@ -167,7 +167,7 @@ class DecoderRNN(nn.Module):
 
         rnn_pred = []
         x_onehot = torch.FloatTensor(batch_size, self.num_chars)
-        for t in range(lens[0]):
+        for t in range(lens[0] - 1):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
@@ -209,7 +209,8 @@ class DecoderRNN(nn.Module):
         scores_flatten = self.scoring(output_flatten)  # concatenated scores (sum(lens), num_chars)
         cum_lens = np.cumsum([0] + lens)
         scores_unflatten = [scores_flatten[cum_lens[i]:cum_lens[i + 1]] for i in range(batch_size)]
-        scores_unflatten = rnn.pad_sequence(scores_unflatten, batch_first=True, padding_value=-99)  # max_len, batch, num_chars
+        scores_unflatten = rnn.pad_sequence(scores_unflatten, batch_first=True,
+                                            padding_value=-99)  # max_len, batch, num_chars
         return scores_unflatten
 
 
@@ -239,6 +240,7 @@ if __name__ == '__main__':
     with torch.no_grad():
         enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
         print(enc_out[0].shape)
-        print(dec([torch.ones((4, 32)), torch.ones((2, 32))], enc_out[0], enc_out[1], enc_out[3]).shape)
+        print(dec([torch.ones((3)), torch.ones((2))], enc_out[0], enc_out[1], enc_out[3]).shape)
+        print(dec([torch.ones((3)), torch.ones((2))], enc_out[0], enc_out[1], enc_out[3]))
         print(las([torch.ones((120, 40)), torch.ones((90, 40))],
-                  [torch.ones((20, 32)), torch.ones((1, 32))]).shape)
+                  [torch.ones((20)), torch.ones((1))]).shape)

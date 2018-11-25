@@ -207,6 +207,7 @@ class LanguageModelTrainer:
         logging.info(t)
 
     def train_batch(self, inputs, targets):
+        print('input size', (len(inputs), len(inputs[0])))
         scores = self.model(inputs, targets)
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         loss = self.criterion(scores, targets[:, 1:])
