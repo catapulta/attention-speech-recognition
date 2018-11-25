@@ -173,7 +173,8 @@ class DecoderRNN(nn.Module):
                 x = seq_list[:, t]
                 x_onehot = x_onehot.zero_()
                 pdb.set_trace()
-                x = x_onehot.scatter_(1, x.long(), 1)
+                x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
+                x = x_onehot.scatter_(1, x, 1)
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
 
