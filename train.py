@@ -248,7 +248,7 @@ class LanguageModelTrainer:
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         for i in range(max_len-2):
             scores = scores.squeeze(1)
-            words = torch.argmax(scores, dim=1).float().unsqueeze(0)  # batch, 1
+            words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
             prediction.append(words)
             print(words.shape)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
