@@ -271,7 +271,7 @@ class LanguageModelTrainer:
             rand_pred = torch.stack(rand_pred, dim=1).squeeze(0)
             lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
-            rand_pred = [rand_pred[i, :lens[i]] for i in range(len(rand_pred))]
+            rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
             rand_pred = [rand_pred[i] for i in seq_order]
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
