@@ -237,9 +237,10 @@ class LanguageModelTrainer:
         enc_out = self.model.encoder(data_batch)
         starts = torch.zeros(1, len(self.chars)+1)
         prediction.append(starts)
-        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
+        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3]) # batch, max_len, num_chars
         for i in range(max_len-1):
-            words = torch.argmax(scores, dim=1).float()
+            pdb.set_trace()
+            words = torch.argmax(scores, dim=2).float()
             prediction.append(words)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
         prediction = torch.stack(prediction, dim=1).squeeze(0)
@@ -260,14 +261,14 @@ class LanguageModelTrainer:
         prediction = []  # store predictions
         losses = []
         for iter in range(random_paths):
-            rand_pred = list()  # store batch_preds
+            rand_pred = []  # store batch_preds
             rand_pred.append(starts)
             scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
-            for i in range(max_len-1):
-                scores = F.softmax(scores, dim=1)
-                words = torch.multinomial(scores, 1, replacement=False, )
-                rand_pred.append(words)
+            for t in range(max_len-1):
                 pdb.set_trace()
+                scores = F.softmax(scores, dim=2)
+                words = torch.multinomial(scores, 1, replacement=False)
+                rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
             rand_pred = torch.stack(rand_pred, dim=1).squeeze(0)
             lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
@@ -285,7 +286,7 @@ class LanguageModelTrainer:
         losses = torch.stack(losses, dim=1)
         m, argminloss = torch.min(losses, dim=1)
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
-        return prediction
+        return prediction  # batch_size,
 
 
     # def old_batch(self, data_batch):

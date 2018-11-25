@@ -213,8 +213,8 @@ class DecoderRNN(nn.Module):
         cum_lens = np.cumsum([0] + lens)
         scores_unflatten = [scores_flatten[cum_lens[i]:cum_lens[i + 1]] for i in range(batch_size)]
         scores_unflatten = rnn.pad_sequence(scores_unflatten, batch_first=True,
-                                            padding_value=-99)  # max_len, batch, num_chars
-        return scores_unflatten
+                                            padding_value=-99)  # batch, max_len, num_chars
+        return scores_unflatten  # batch, max_len, num_chars
 
 
 class LAS(nn.Module):
@@ -251,15 +251,16 @@ if __name__ == '__main__':
     # with torch.no_grad():
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
+    las.eval()
     targets = [torch.ones(20)]
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las([torch.ones((120, 40))], targets)
+    print(scores.shape)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
     criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
-    print(scores.shape)
     loss = criterion(scores, targets[:, 1:].long())
     loss.backward()
     optimizer.step()
