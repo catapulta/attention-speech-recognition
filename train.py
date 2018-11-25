@@ -216,7 +216,9 @@ class LanguageModelTrainer:
         print('input size', (len(inputs), len(inputs[0])))
         scores = self.model(inputs, targets)
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-        loss = self.criterion(scores, targets[:, 1:])
+        assert targets.shape[1] < 2, 'Targets must have at least 2 entries (including start and end chars)'
+        idx = -1 if scores.shape[2] > 1 else None
+        loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -233,13 +235,19 @@ class LanguageModelTrainer:
             return preds
 
     def gen_greedy_search(self, data_batch, max_len):
+        '''
+        Includes start and end of sequence chars.
+        :param data_batch:
+        :param max_len:
+        :return:
+        '''
         prediction = []  # store predictions
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
         prediction.append(starts)
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         scores = scores.squeeze(0)
-        for i in range(max_len-1):
+        for i in range(max_len-2):
             pdb.set_trace()
             words = torch.argmax(scores, dim=1).float().squeeze(1)  # batch, 1
             prediction.append(words)
@@ -249,29 +257,37 @@ class LanguageModelTrainer:
         # remove excess words
         lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
         assert len(lens) == len(prediction), 'lens and prediction dont match'
-        prediction = [prediction[i, :lens[i]] for i in range(len(prediction))]
+        prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
         return prediction, lens
 
     def gen_random_search(self, data_batch, random_paths, max_len):
+        '''
+        Includes start and end of sequence chars.
+        :param data_batch:
+        :param random_paths:
+        :param max_len:
+        :return:
+        '''
         loss = torch.nn.CrossEntropyLoss(reduction='sum')
 
         enc_out = self.model.encoder(data_batch)
-        starts = [torch.zeros(len(self.chars)+1)]*len(data_batch)
+        starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
         prediction = []  # store predictions
         losses = []
         for iter in range(random_paths):
             rand_pred = []  # store batch_preds
             rand_pred.append(starts)
-            scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
-            for t in range(max_len-1):
+            scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+            scores = scores.squeeze(0)
+            for t in range(max_len-2):
                 pdb.set_trace()
-                scores = F.softmax(scores, dim=2)
+                scores = F.softmax(scores, dim=1)  # batch, num_classes
                 words = torch.multinomial(scores, 1, replacement=False)
                 rand_pred.append(words)
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
-            rand_pred = torch.stack(rand_pred, dim=1).squeeze(0)
+            rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]

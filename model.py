@@ -168,7 +168,6 @@ class DecoderRNN(nn.Module):
             matrix_mask[i, 0, :mask] = 1
 
         rnn_pred = []
-        print(lens[0])
         for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
@@ -264,8 +263,10 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
     criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
-    print(scores.shape, targets.shape)
-    idx = -1 if scores.shape[2]>1 else None
-    loss = criterion(scores[:, :, :idx], targets.long())
+    idx = -1 if scores.shape[2] > 1 else None
+
+    fake_target = torch.cat((targets.long(), targets.long()), dim=1)
+    print(scores[:, :, :idx].shape, fake_target.shape)
+    loss = criterion(scores[:, :, :idx], fake_target[:, 1:])
     loss.backward()
     optimizer.step()
