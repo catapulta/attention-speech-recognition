@@ -29,7 +29,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001/2) if not 'test' in data_path else int(len(self.data)*.1)
+        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
