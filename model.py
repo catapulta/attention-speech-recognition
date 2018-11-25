@@ -101,7 +101,7 @@ class EncoderCNN(nn.Module):
 # Model that takes packed sequences in training
 class DecoderRNN(nn.Module):
     def __init__(self, num_chars, key_size=128, value_size=256, nlayers=4,
-                 hidden_size=512, input_size=31, teacher=0.4, bidirectional=False):
+                 hidden_size=512, teacher=0.4, bidirectional=False):
         super(DecoderRNN, self).__init__()
         self.teacher = teacher
         self.key_size = key_size
@@ -166,10 +166,13 @@ class DecoderRNN(nn.Module):
             matrix_mask[i, 0, :mask] = 1
 
         rnn_pred = []
+        x_onehot = torch.FloatTensor(batch_size, self.num_chars)
         for t in range(lens[0]):
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
+                x_onehot = x_onehot.zero_
+                x = x_onehot.scatter_(x.long())
 
             query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
 
