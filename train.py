@@ -215,7 +215,7 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         print('input size', (len(inputs), len(inputs[0])))
-        input_targets = targets.copy()
+        input_targets = targets.clone()
         input_targets[targets == -99] = len(self.chars)
         scores = self.model(inputs, targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
