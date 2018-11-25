@@ -209,7 +209,7 @@ class DecoderRNN(nn.Module):
         scores_flatten = self.scoring(output_flatten)  # concatenated scores (sum(lens), num_chars)
         cum_lens = np.cumsum([0] + lens)
         scores_unflatten = [scores_flatten[cum_lens[i]:cum_lens[i + 1]] for i in range(batch_size)]
-        scores_unflatten = rnn.pad_sequence(scores_unflatten, padding_value=-99)  # max_len, batch, num_chars
+        scores_unflatten = rnn.pad_sequence(scores_unflatten, batch_first=True, padding_value=-99)  # max_len, batch, num_chars
         return scores_unflatten
 
 
