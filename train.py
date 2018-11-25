@@ -210,16 +210,15 @@ class LanguageModelTrainer:
         logging.info(t)
 
     def train_batch(self, inputs, targets):
-        inputs = inputs.cuda() if torch.cuda.is_available() else inputs
         input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=len(self.chars)-1)
         scores = self.model(inputs, input_targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         idx = -1 if scores.shape[2] > 1 else None
 
+        # compute loss
         targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
-
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
         loss.backward()
         self.optimizer.step()
