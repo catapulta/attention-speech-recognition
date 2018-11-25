@@ -83,7 +83,7 @@ class EncoderCNN(nn.Module):
         packed_input = rnn.pack_sequence(reduced_embeddings)  # packed uneven length sequences for fast RNN processing
         packed_input = packed_input.cuda() if torch.cuda.is_available() else packed_input
         # learn initial state
-        init_hidden = self.init_hidden.expand(-1, batch_size, -1)
+        init_hidden = self.init_hidden.expand(-1, batch_size, -1).contiguous()
         packed_output, hidden = self.rnn(packed_input, init_hidden)  # reduced_len, batch_size, features
         packed_output, _ = rnn.pad_packed_sequence(packed_output)  # unpacked output (padded)
         output_flatten = torch.cat(
@@ -160,8 +160,8 @@ class DecoderRNN(nn.Module):
 
         hiddens = []
         for hidden in self.init_hidden:
-            hiddens.append(hidden.expand(batch_size, -1))
-        first_hidden = self.first_hidden.expand(batch_size, -1)
+            hiddens.append(hidden.expand(batch_size, -1)).contiguous()
+        first_hidden = self.first_hidden.expand(batch_size, -1).contiguous()
 
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
