@@ -24,7 +24,7 @@ class UtteranceDataset(Dataset):
             for words in labels:
                 words = np.array([0]
                                  + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
-                                 + [len(self.letter_dict)])
+                                 + [len(self.letter_dict)-1])
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
