@@ -86,7 +86,8 @@ class Levenshtein:
 
 # model trainer
 class LanguageModelTrainer:
-    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1, chars=['<'] + character_list.LETTERS + ['>']):
+    def __init__(self, model, loader, val_loader, test_loader, max_epochs=1,
+                 chars=['<'] + character_list.LETTERS + ['>']):
         self.model = model.cuda() if torch.cuda.is_available() else model
         self.chars = chars
         self.loader = loader
