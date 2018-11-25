@@ -29,7 +29,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001) if not 'test' in data_path else int(len(self.data)*.1)
+        self.num_entries = int(len(self.data)*.001/2) if not 'test' in data_path else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -244,7 +244,7 @@ class LanguageModelTrainer:
         prediction = []  # store predictions
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
-        prediction.append(starts)
+        prediction.append(torch.cat(starts, dim=0))
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         for i in range(max_len-2):
             scores = scores.squeeze(0)
@@ -278,7 +278,7 @@ class LanguageModelTrainer:
         losses = []
         for iter in range(random_paths):
             rand_pred = []  # store batch_preds
-            rand_pred.append(starts)
+            rand_pred.append(torch.cat(starts, dim=0))
             scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
             for t in range(max_len-2):
                 scores = scores.squeeze(0)
