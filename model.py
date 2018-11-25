@@ -180,7 +180,6 @@ class DecoderRNN(nn.Module):
             # before "V" has no hard constraints.
 
             # query: 1, batch_size, hidden_size || keys: max_len, batch_size, key_size
-            pdb.set_trace()
             energy = torch.bmm(query.permute(1, 0, 2), keys.permute(1, 2, 0))  # batch_size, 1, max_len
             attention = F.softmax(energy, dim=2)  # along seq_len: batch_size, 1, max_len
             attention = attention * matrix_mask  # mask attention
