@@ -297,7 +297,7 @@ class LanguageModelTrainer:
             prediction.append(rand_pred)
             rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             rand_pred = rand_pred.permute(0, 2, 1)  # batch_size, num_classes, seq_len
-            loss = float(loss(scores, rand_pred[:, 1:], ignore_index=-99))
+            loss = float(loss(scores, rand_pred[:, 1:]))
             losses.append(loss)
 
         losses = torch.stack(losses, dim=1)
