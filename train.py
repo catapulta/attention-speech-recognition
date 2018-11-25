@@ -226,12 +226,12 @@ class LanguageModelTrainer:
         self.optimizer.zero_grad()
         return float(loss)  # avoid autograd retention
 
-    def test(self):
+    def test(self, max_len=190, num_paths=10):
         with torch.no_grad():
             self.model.eval()
             preds = []
             for i, inputs in enumerate(self.test_loader):
-                pred = self.gen_random_search(inputs, 100, 190)
+                pred = self.gen_random_search(inputs, num_paths, max_len)
                 pred = [self.chars[j.long()] for j in pred]
                 preds.append(pred)
             return preds
@@ -379,4 +379,4 @@ if __name__ == '__main__':
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    write_results(trainer.test())
+    write_results(trainer.test(max_len=4, num_paths=2))
