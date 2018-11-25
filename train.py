@@ -241,6 +241,7 @@ class LanguageModelTrainer:
         # remove excess words
         lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
         assert len(lens) == len(prediction), 'lens and prediction dont match'
+        pdb.set_trace()
         prediction = [prediction[i, :lens[i]] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
