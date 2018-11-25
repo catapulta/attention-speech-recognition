@@ -236,10 +236,10 @@ class LanguageModelTrainer:
             words = torch.argmax(scores, dim=1).float()
             prediction.append(words)
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
-        prediction = torch.stack(prediction, dim=1)
+        prediction = torch.stack(prediction, dim=1).squeeze(0)
 
         # remove excess words
-        lens = torch.argmin(prediction, dim=1).long().tolist()  # finds the 0s in the prediction
+        lens = torch.argmin(prediction, dim=0).long().tolist()  # finds the 0s in the prediction
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         pdb.set_trace()
         prediction = [prediction[i, :lens[i]] for i in range(len(prediction))]
