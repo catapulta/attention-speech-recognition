@@ -156,8 +156,8 @@ class LanguageModelTrainer:
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
             self.scheduler.step(epoch_loss)
-            print('[TRAIN]  Epoch [%d/%d]   Loss: %.4f'
-                  % (self.epochs, self.max_epochs, epoch_loss))
+            print('[TRAIN]  Epoch [%d/%d]   Perplexity: %.4f'
+                  % (self.epochs, self.max_epochs, np.exp(epoch_loss)))
             self.train_losses.append(epoch_loss)
             # log loss
             tLog.log_scalar('training_loss', epoch_loss, self.epochs)
@@ -265,8 +265,9 @@ class LanguageModelTrainer:
             scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])
             for i in range(max_len-1):
                 scores = F.softmax(scores, dim=1)
-                words = torch.multinomial(scores, 1, replacement=False)
+                words = torch.multinomial(scores, 1, replacement=False, )
                 rand_pred.append(words)
+                pdb.set_trace()
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
             rand_pred = torch.stack(rand_pred, dim=1).squeeze(0)
             lens = torch.argmin(rand_pred, dim=1).long().tolist()  # finds the 0s in the prediction
