@@ -164,10 +164,11 @@ class DecoderRNN(nn.Module):
         # hiddens = nn.ParameterList()
         # for hidden in self.init_hidden:
         #     hiddens.append(hidden.expand(batch_size, -1).contiguous())
-        for hidden in self.init_hidden:
-            hidden.expand(batch_size, -1)
+        # hiddens = self.init_hidden
         first_hidden = self.first_hidden.expand(batch_size, -1).contiguous()
 
+
+        hiddens = []
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
             matrix_mask[i, 0, :mask] = 1
@@ -185,7 +186,7 @@ class DecoderRNN(nn.Module):
                 x = x_onehot.scatter_(1, x, 1)
 
             print('-1', hiddens[-1].is_cuda, 'first', first_hidden.is_cuda)
-            query = self.query(hiddens[-1]).unsqueeze(0)  # 1, batch_size, hidden_size
+            query = self.query(hiddens[-1].expand(batch_size, -1)).unsqueeze(0)  # 1, batch_size, hidden_size
 
             # attention calculation
             # Your key and query needs to have the same dim as you multiply (1,128) Q with (128,T)
@@ -202,16 +203,29 @@ class DecoderRNN(nn.Module):
             context = torch.bmm(attention, values.permute(1, 0, 2))  # batch_size, 1, value_size
             context = context.permute(1, 0, 2)  # 1, batch_size, value_size
 
-            hiddens[0] = torch.cat([context.squeeze(0), first_hidden], dim=1)
+            first_hidden = torch.cat([context.squeeze(0), self.first_hidden.expand(batch_size, -1)], dim=1)
             for i, cell in enumerate(self.cells):
-                x = hiddens[i - 1] if i > 0 else x
-                hiddens[i] = cell(x, hiddens[i])
-                out = hiddens[i]
+                if t == 0:
+                    hiddens.append(cell(x, self.init_hidden[i].expand(batch_size, -1) if i > 0 else first_hidden))
+                else:
+                    hiddens[i] = cell(x, hiddens[i])
+                x = hiddens[i]
+
                 # teacher forcing
                 if i == len(self.cells) - 1:
                     temp_out = self.scoring(out)
                     x = F.gumbel_softmax(temp_out, hard=True)
-            rnn_pred.append(out)
+            rnn_pred.append(x)
+
+            # for i, cell in enumerate(self.cells):
+            #     x = hiddens[i - 1] if i > 0 else x
+            #     hiddens[i] = cell(x, hiddens[i])
+            #     out = hiddens[i]
+            #     # teacher forcing
+            #     if i == len(self.cells) - 1:
+            #         temp_out = self.scoring(out)
+            #         x = F.gumbel_softmax(temp_out, hard=True)
+            # rnn_pred.append(out)
 
         rnn_pred = torch.stack(rnn_pred)
         output_flatten = torch.cat(
