@@ -175,6 +175,7 @@ class DecoderRNN(nn.Module):
 
         rnn_pred = []
         for t in range(lens[0]):
+            print(lens[0])
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
@@ -184,9 +185,12 @@ class DecoderRNN(nn.Module):
                 x = x.long().unsqueeze(1) if len(x.size()) == 1 else x.long()
                 x = x.cuda() if torch.cuda.is_available() else x
                 x = x_onehot.scatter_(1, x, 1)
+            else:
+                x = gumbel_x
 
-            print('-1', hiddens[-1].is_cuda, 'first', first_hidden.is_cuda)
-            query = self.query(hiddens[-1].expand(batch_size, -1)).unsqueeze(0)  # 1, batch_size, hidden_size
+            last_hidden = self.init_hidden[-1] if t == 0 else self.init_hidden[-1]
+            last_hidden = last_hidden.expand(batch_size, -1)
+            query = self.query(last_hidden).unsqueeze(0)  # 1, batch_size, hidden_size
 
             # attention calculation
             # Your key and query needs to have the same dim as you multiply (1,128) Q with (128,T)
@@ -213,8 +217,9 @@ class DecoderRNN(nn.Module):
 
                 # teacher forcing
                 if i == len(self.cells) - 1:
-                    temp_out = self.scoring(out)
-                    x = F.gumbel_softmax(temp_out, hard=True)
+                    temp_out = self.scoring(x)
+                    gumbel_x = F.gumbel_softmax(temp_out, hard=True)
+            print(x.shape)
             rnn_pred.append(x)
 
             # for i, cell in enumerate(self.cells):
@@ -275,7 +280,7 @@ if __name__ == '__main__':
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 10
-    targets = [torch.ones(1)] * batches
+    targets = [torch.ones(10)] * batches
     inputs = [torch.ones((120, 40))] * batches
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
@@ -291,9 +296,10 @@ if __name__ == '__main__':
     criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=0)
     idx = -1 if scores.shape[2] > 1 else None
 
-    targets = torch.cat((targets.long(), targets.long()), dim=1)
+    # targets = torch.cat((targets.long(), targets.long()), dim=1)
     print(scores[:, :, :idx].shape, targets[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], targets[:, 1:].long())
     print(loss.shape)
+    print(loss)
     loss.backward()
     optimizer.step()
