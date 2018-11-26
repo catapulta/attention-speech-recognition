@@ -260,7 +260,11 @@ class LanguageModelTrainer:
         prediction = prediction.cuda() if torch.cuda.is_available() else prediction
 
         # remove excess words
-        lens = torch.argmin(prediction, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
+        lens = []
+        idxs = (prediction == 0)
+        for i in range(len(prediction)):
+            idx = idxs[idxs[:, 0] == i, 1]
+            lens.append(idx.min()[0] if len(idx) > 0 else prediction.shape[1])
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -294,7 +298,6 @@ class LanguageModelTrainer:
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
-            # lens = torch.argmin(rand_pred[:, 1:], dim=1).long().squeeze(1) +1  # finds the 0s in the prediction
             lens = []
             idxs = (rand_pred == 0)
             for i in range(len(rand_pred)):
