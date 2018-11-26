@@ -268,6 +268,7 @@ class LanguageModelTrainer:
         for i in range(len(prediction)):
             idx = idxs[idxs[:, 0] == i, 1]
             lens.append(idx.min() if len(idx) > 0 else prediction.shape[1])
+        pdb.set_trace()
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
