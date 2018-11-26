@@ -385,4 +385,4 @@ if __name__ == '__main__':
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    write_results(trainer.test(max_len=4, num_paths=2))
+    write_results(trainer.test(max_len=190, num_paths=100))
