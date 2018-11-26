@@ -302,7 +302,7 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = []
-            idxs = (rand_pred[:, 1:] == 0)
+            idxs = (rand_pred[:, 1:] == 0).nonzero()
             for i in range(len(rand_pred)):
                 idx = idxs[idxs[:, 0] == i, 1]
                 lens.append( idx.min() + 1 if len(idx) > 0 else rand_pred.shape[1]-1 )
