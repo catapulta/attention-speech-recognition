@@ -264,7 +264,7 @@ class LanguageModelTrainer:
 
         # remove excess words
         lens = []
-        idxs = (prediction == 0)
+        idxs = (prediction == 0).nonzero()
         for i in range(len(prediction)):
             idx = idxs[idxs[:, 0] == i, 1]
             lens.append(idx.min() if len(idx) > 0 else prediction.shape[1])
