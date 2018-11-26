@@ -213,6 +213,7 @@ class LanguageModelTrainer:
         logging.info(t)
 
     def train_batch(self, inputs, targets):
+        self.model.train()
         input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
         scores = self.model(inputs, input_targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
@@ -231,6 +232,7 @@ class LanguageModelTrainer:
     def test(self, max_len=190, num_paths=10):
         with torch.no_grad():
             self.model.eval()
+            pdb.set_trace()
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, num_paths, max_len)
