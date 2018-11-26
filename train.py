@@ -319,8 +319,8 @@ class LanguageModelTrainer:
             if len(rand_pred[0]) < 2:
                 loss = torch.Tensor([1e9]*len(rand_pred))
             else:
+                pdb.set_trace()
                 loss = [criterion(scores.cpu()[i:i+1, :, :len(rand_pred[i][1:])], rand_pred[i].cpu()[1:].long()) for i in range(len(rand_pred))]
-                print('loss', loss)
                 loss = torch.cat(loss)
                 # loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
