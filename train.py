@@ -232,10 +232,11 @@ class LanguageModelTrainer:
     def test(self, max_len=190, num_paths=10):
         with torch.no_grad():
             self.model.eval()
-            pdb.set_trace()
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, num_paths, max_len)
+                pdb.set_trace()
+
                 pred = ''.join([self.chars[j.long()] for j in pred])
                 print(pred)
                 preds.append(pred)
