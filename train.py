@@ -28,7 +28,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -295,6 +295,7 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
+            pdb.set_trace()
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -350,7 +351,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 1
+    NUM_EPOCHS = 100
     BATCH_SIZE = 64
 
     model = LAS(num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
