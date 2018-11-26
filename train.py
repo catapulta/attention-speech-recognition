@@ -299,12 +299,12 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = []
-            idxs = (rand_pred == 0)
+            idxs = (rand_pred[:, 1:] == 0)
             for i in range(len(rand_pred)):
                 idx = idxs[idxs[:, 0] == i, 1]
-                lens.append( idx.min()[0] if len(idx) > 0 else rand_pred.shape[1] )
+                lens.append( idx.min() + 1 if len(idx) > 0 else rand_pred.shape[1] )
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
-            rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
+            rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]  # cut excess words
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
             rand_pred = [rand_pred[i] for i in seq_order]
             prediction.append(rand_pred)
@@ -317,9 +317,11 @@ class LanguageModelTrainer:
             # if rand_pred.shape[1] < 2:
             #     loss = torch.Tensor([100]*rand_pred.shape[0])
             if len(rand_pred[0]) < 2:
-                loss = torch.Tensor([100]*len(rand_pred))
+                loss = torch.Tensor([1e9]*len(rand_pred))
             else:
-                loss = [criterion(scores[i, :, :len(rand_pred[i, 1:])], rand_pred[i, 1:].long()) for i in range(len(rand_pred))]
+                loss = [criterion(scores[i, :, :len(rand_pred[i, 1:])],
+                                  rand_pred[i, 1:].long())
+                        for i in range(len(rand_pred))]
                 loss = torch.cat(loss)
                 # loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
