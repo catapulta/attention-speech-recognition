@@ -265,11 +265,9 @@ class LanguageModelTrainer:
         # remove excess words
         lens = []
         idxs = (prediction[:, 1:] == 0).nonzero()
-        pdb.set_trace()
-
         for i in range(len(prediction)):
-            idx = idxs[idxs[:, 0] == i, 1]
-            lens.append(idx.min() + 1 if len(idx) > 0 else prediction.shape[1])
+            idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
+            lens.append(idx)
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -304,10 +302,10 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = []
-            idxs = (rand_pred[:, 1:] == 0).nonzero()
-            for i in range(len(rand_pred)):
-                idx = idxs[idxs[:, 0] == i, 1]
-                lens.append( idx.min() + 1 if len(idx) > 0 else rand_pred.shape[1]-1 )
+            idxs = (prediction[:, 1:] == 0).nonzero()
+            for i in range(len(prediction)):
+                idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
+                lens.append(idx)
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]  # cut excess words
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
