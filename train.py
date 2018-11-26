@@ -235,9 +235,7 @@ class LanguageModelTrainer:
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, num_paths, max_len)
-                pdb.set_trace()
-
-                pred = ''.join([self.chars[j.long()] for j in pred])
+                pred += [''.join([self.chars[c.long()] for c in obs]) for obs in pred]
                 print(pred)
                 preds.append(pred)
             return preds
