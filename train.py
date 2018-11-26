@@ -99,7 +99,7 @@ class LanguageModelTrainer:
         self.generated = []
         self.generated_logits_test = []
         self.generated_test = []
-        self.epochs = 0
+        self.epochs = 6
         self.max_epochs = max_epochs
         self.steps = 0
 
