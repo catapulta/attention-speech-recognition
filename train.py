@@ -310,7 +310,7 @@ class LanguageModelTrainer:
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]  # cut excess words
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
             rand_pred = [rand_pred[i] for i in seq_order]
-            prediction.append(rand_pred)
+            prediction.append(rand_pred)  # random_paths, batch, max_len
             # compute scores given the predicted sequence
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
             scores = scores.permute(0, 2, 1)  # batch_size, num_classes, max_len
@@ -326,15 +326,14 @@ class LanguageModelTrainer:
                 loss = []
                 for i in range(len(rand_pred)):
                     score = scores[i:i+1, :, :len(rand_pred[i][1:])]
-                    print('score', score.shape)
                     target = rand_pred[i][1:].long().permute(1, 0)
-                    print('target', target.shape)
                     loss.append( criterion(score, target).unsqueeze(0) )
                 loss = torch.cat(loss)
             losses.append(loss)
 
         losses = torch.stack(losses, dim=1)
-        m, argminloss = torch.min(losses, dim=1)
+        _, argminloss = torch.min(losses, dim=1)
+        pdb.set_trace()
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
         return prediction  # batch_size,
 
