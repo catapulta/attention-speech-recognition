@@ -310,6 +310,7 @@ class LanguageModelTrainer:
             prediction.append(rand_pred)
             # compute scores given the predicted sequence
             scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
+            scores = scores.permute(0, 2, 1)  # batch_size, num_classes, max_len
             # compute loss
             # rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
             # rand_pred = rand_pred.squeeze(1)
@@ -319,8 +320,7 @@ class LanguageModelTrainer:
             if len(rand_pred[0]) < 2:
                 loss = torch.Tensor([1e9]*len(rand_pred))
             else:
-                pdb.set_trace()
-                loss = [criterion(scores.cpu()[i:i+1, :, :len(rand_pred[i][1:])], rand_pred[i].cpu()[1:].long()) for i in range(len(rand_pred))]
+                loss = [criterion(scores[i:i+1, :, :len(rand_pred[i][1:])], rand_pred[i][1:].long()) for i in range(len(rand_pred))]
                 loss = torch.cat(loss)
                 # loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
