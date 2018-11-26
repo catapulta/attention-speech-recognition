@@ -264,7 +264,7 @@ class LanguageModelTrainer:
         idxs = (prediction == 0)
         for i in range(len(prediction)):
             idx = idxs[idxs[:, 0] == i, 1]
-            lens.append(idx.min()[0] if len(idx) > 0 else prediction.shape[1])
+            lens.append(idx.min() if len(idx) > 0 else prediction.shape[1])
         assert len(lens) == len(prediction), 'lens and prediction dont match'
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -319,6 +319,7 @@ class LanguageModelTrainer:
             if len(rand_pred[0]) < 2:
                 loss = torch.Tensor([1e9]*len(rand_pred))
             else:
+                pdb.set_trace()
                 loss = [criterion(scores[i, :, :len(rand_pred[i, 1:])],
                                   rand_pred[i, 1:].long())
                         for i in range(len(rand_pred))]
