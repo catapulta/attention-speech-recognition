@@ -321,6 +321,7 @@ class LanguageModelTrainer:
             else:
                 loss = [criterion(scores[i:i+1, :, :len(rand_pred[i][1:])],
                                   rand_pred[i][1:].long()) for i in range(len(rand_pred))]
+                pdb.set_trace()
                 loss = torch.cat(loss)
                 # loss = criterion(scores[:, :, :idx], rand_pred[:, 1:].long())
             losses.append(loss)
