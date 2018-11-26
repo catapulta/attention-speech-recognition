@@ -254,9 +254,10 @@ class LanguageModelTrainer:
         for i in range(max_len-2):
             scores = scores.squeeze(1)
             words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
-            prediction.append(words)
+            prediction.append(words.cpu())
             scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
+        prediction = prediction.cuda() if torch.cuda.is_available() else prediction
 
         # remove excess words
         lens = torch.argmin(prediction, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
