@@ -318,6 +318,7 @@ class LanguageModelTrainer:
 
         losses = torch.stack(losses, dim=1)
         m, argminloss = torch.min(losses, dim=1)
+        pdb.set_trace()
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
         return prediction  # batch_size,
 
