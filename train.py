@@ -28,7 +28,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -361,7 +361,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 1
+    NUM_EPOCHS = 100
     BATCH_SIZE = 64
 
     model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
@@ -396,4 +396,4 @@ if __name__ == '__main__':
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    write_results(trainer.test(max_len=10, num_paths=100))
+    write_results(trainer.test(max_len=190, num_paths=1000))
