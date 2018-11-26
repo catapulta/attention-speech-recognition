@@ -15,7 +15,7 @@ logging.basicConfig(filename='train.log', level=logging.DEBUG)
 # data loader
 class UtteranceDataset(Dataset):
     def __init__(self, data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy', test=False):
-        self.letter_dict = {j: i for i, j in enumerate(['<'] + character_list.LETTERS + ['>'])}
+        self.letter_dict = {j: i for i, j in enumerate(['<'] + character_list.LETTERS)}
         self.test = test
         self.data = np.load(data_path, encoding='latin1')
         labels = np.load(label_path) if not test else None  # index labels from 1 to n_labels
@@ -24,7 +24,7 @@ class UtteranceDataset(Dataset):
             for words in labels:
                 words = np.array([0]
                                  + [self.letter_dict[letter] for letter in ' '.join(words.astype(str)) if letter != '_']
-                                 + [len(self.letter_dict)-1])
+                                 + [0])
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
@@ -85,7 +85,7 @@ class Levenshtein:
 # model trainer
 class LanguageModelTrainer:
     def __init__(self, model, loader, val_loader, test_loader, max_epochs=1,
-                 chars=['<'] + character_list.LETTERS + ['>']):
+                 chars=['<>'] + character_list.LETTERS):
         self.model = model.cuda() if torch.cuda.is_available() else model
         self.chars = chars
         self.loader = loader
@@ -213,7 +213,7 @@ class LanguageModelTrainer:
         logging.info(t)
 
     def train_batch(self, inputs, targets):
-        input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=len(self.chars)-1)
+        input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
         scores = self.model(inputs, input_targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         idx = -1 if scores.shape[2] > 1 else None
@@ -294,7 +294,12 @@ class LanguageModelTrainer:
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
-            lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
+            # lens = torch.argmin(rand_pred[:, 1:], dim=1).long().squeeze(1) +1  # finds the 0s in the prediction
+            lens = []
+            idxs = (rand_pred == 0)
+            for i in range(len(rand_pred)):
+                idx = idxs[idxs[:, 0] == i, 1]
+                lens.append( idx.min() if len(idx) > 0 else rand_pred.shape[1] )
             pdb.set_trace()
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]

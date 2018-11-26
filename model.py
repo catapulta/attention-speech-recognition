@@ -278,7 +278,6 @@ if __name__ == '__main__':
 
     targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
     input_targets = targets.clone()
-    input_targets[targets == -99] = 33-1
 
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
