@@ -269,7 +269,8 @@ class LanguageModelTrainer:
         for i in range(len(prediction)):
             idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
             lens.append(idx)
-        assert len(lens) == len(prediction), 'lens and prediction dont match'
+        assert len(lens) == len(prediction), 'lens and prediction dont match'\
+        pdb.set_trace()
         prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
