@@ -323,12 +323,10 @@ class LanguageModelTrainer:
                 loss = []
                 for i in range(len(rand_pred)):
                     score = scores[i:i+1, :, :len(rand_pred[i][1:])]
-                    print(score)
                     print('score', score.shape)
                     target = rand_pred[i][1:].long()
-                    print(target)
                     print('target', target.shape)
-                    loss.append( criterion(score, target).unsqueeze(0) )
+                    loss.append( criterion(score, target.unsqueeze(0)).unsqueeze(0) )
                 loss = torch.cat(loss)
             losses.append(loss)
 
