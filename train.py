@@ -162,8 +162,10 @@ class LanguageModelTrainer:
             for tag, value in self.model.named_parameters():
                 tag = tag.replace('.', '/')
                 tLog.log_histogram(tag, value.data.cpu().numpy(), self.epochs)
-                pdb.set_trace()
-                tLog.log_histogram(tag + '/grad', value.grad.data.cpu().numpy(), self.epochs)
+                if value.grad is not None:
+                    tLog.log_histogram(tag + '/grad', value.grad.data.cpu().numpy(), self.epochs)
+                else:
+                    print(tag)
             # save
             torch.save(self.model.state_dict(), "models/{}.pt".format(epoch))
 
