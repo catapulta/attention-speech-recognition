@@ -176,7 +176,6 @@ class DecoderRNN(nn.Module):
 
         rnn_pred = []
         for t in range(lens[0]):
-            print(lens[0])
             # teacher forcing
             if not (self.teacher > np.random.random() and t != 0):
                 x = seq_list[:, t]
@@ -220,7 +219,6 @@ class DecoderRNN(nn.Module):
                 if i == len(self.cells) - 1:
                     temp_out = self.scoring(x)
                     gumbel_x = F.gumbel_softmax(temp_out, hard=True)
-            print(x.shape)
             rnn_pred.append(x)
 
         rnn_pred = torch.stack(rnn_pred)
