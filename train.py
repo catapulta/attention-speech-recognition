@@ -183,7 +183,6 @@ class LanguageModelTrainer:
                         idx = np.random.randint(0, len(val_inputs))
                         print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
                         val_output, feature_lengths = self.gen_greedy_search(val_inputs, 190)
-                        pdb.set_trace()
                         print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
                         ls += self.LD.forward(val_output, val_labels)
                         lens += len(val_inputs)
@@ -255,7 +254,7 @@ class LanguageModelTrainer:
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
         prediction.append(torch.stack(starts, dim=0))
         scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
-        for i in range(max_len-2):
+        for i in range(max_len-1):
             scores = scores.squeeze(1)
             words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
             prediction.append(words.cpu())
@@ -270,8 +269,7 @@ class LanguageModelTrainer:
             idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
             lens.append(idx)
         assert len(lens) == len(prediction), 'lens and prediction dont match'
-        pdb.set_trace()
-        prediction = [prediction[i, :lens[i]+1] for i in range(len(prediction))]
+        prediction = [prediction[i, :lens[i].long()+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
         return prediction, lens
@@ -309,7 +307,7 @@ class LanguageModelTrainer:
                 idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
                 lens.append(idx)
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
-            rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]  # cut excess words
+            rand_pred = [rand_pred[i, :lens[i].long()+1] for i in range(len(rand_pred))]  # cut excess words
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
             rand_pred = [rand_pred[i] for i in seq_order]
             prediction.append(rand_pred)  # random_paths, batch, max_len
@@ -335,7 +333,6 @@ class LanguageModelTrainer:
 
         losses = torch.stack(losses, dim=1)
         _, argminloss = torch.min(losses, dim=1)
-        pdb.set_trace()
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
         return prediction  # batch_size,
 
