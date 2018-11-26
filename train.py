@@ -299,8 +299,7 @@ class LanguageModelTrainer:
             idxs = (rand_pred == 0)
             for i in range(len(rand_pred)):
                 idx = idxs[idxs[:, 0] == i, 1]
-                lens.append( idx.min() if len(idx) > 0 else rand_pred.shape[1] )
-            pdb.set_trace()
+                lens.append( idx.min()[0] if len(idx) > 0 else rand_pred.shape[1] )
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
@@ -324,7 +323,6 @@ class LanguageModelTrainer:
 
         losses = torch.stack(losses, dim=1)
         m, argminloss = torch.min(losses, dim=1)
-        pdb.set_trace()
         prediction = [prediction[idx_best][i] for i, idx_best in enumerate(argminloss)]
         return prediction  # batch_size,
 
