@@ -165,7 +165,7 @@ class LanguageModelTrainer:
                 if value.grad is not None:
                     tLog.log_histogram(tag + '/grad', value.grad.data.cpu().numpy(), self.epochs)
                 else:
-                    print(tag)
+                    print('Parameter', tag, 'has no gradient.')
             # save
             torch.save(self.model.state_dict(), "models/{}.pt".format(epoch))
 
