@@ -15,7 +15,7 @@ logging.basicConfig(filename='train.log', level=logging.DEBUG)
 # data loader
 class UtteranceDataset(Dataset):
     def __init__(self, data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy', test=False):
-        self.letter_dict = {j: i for i, j in enumerate(['<'] + character_list.LETTERS)}
+        self.letter_dict = {j: i for i, j in enumerate(['>'] + character_list.LETTERS)}
         self.test = test
         self.data = np.load(data_path, encoding='latin1')
         labels = np.load(label_path) if not test else None  # index labels from 1 to n_labels
@@ -28,7 +28,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -68,7 +68,7 @@ def collate(batch):
 
 class Levenshtein:
     def __init__(self, charmap):
-        self.label_map = ['<>'] + charmap  # add special char to first entry
+        self.label_map = charmap
 
     def __call__(self, prediction, target):
         return self.forward(prediction, target)
@@ -85,7 +85,7 @@ class Levenshtein:
 # model trainer
 class LanguageModelTrainer:
     def __init__(self, model, loader, val_loader, test_loader, max_epochs=1,
-                 chars=['<>'] + character_list.LETTERS):
+                 chars=['>'] + character_list.LETTERS):
         self.model = model.cuda() if torch.cuda.is_available() else model
         self.chars = chars
         self.loader = loader
@@ -361,7 +361,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 1
     BATCH_SIZE = 64
 
     model = LAS(num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
@@ -396,4 +396,4 @@ if __name__ == '__main__':
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    write_results(trainer.test(max_len=190, num_paths=100))
+    write_results(trainer.test(max_len=10, num_paths=100))
