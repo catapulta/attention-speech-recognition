@@ -326,7 +326,7 @@ class LanguageModelTrainer:
                     print('score', score.shape)
                     target = rand_pred[i][1:].long()
                     print('target', target.shape)
-                    loss.append( criterion(score, target.unsqueeze(1)).unsqueeze(0) )
+                    loss.append( criterion(score, target.squeeze(1)).unsqueeze(0) )
                 loss = torch.cat(loss)
             losses.append(loss)
 
