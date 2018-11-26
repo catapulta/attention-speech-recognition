@@ -172,6 +172,7 @@ class DecoderRNN(nn.Module):
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
             matrix_mask[i, 0, :mask] = 1
+        matrix_mask = matrix_mask.cuda() if torch.cuda.is_available() else matrix_mask
 
         rnn_pred = []
         for t in range(lens[0]):
@@ -221,16 +222,6 @@ class DecoderRNN(nn.Module):
                     gumbel_x = F.gumbel_softmax(temp_out, hard=True)
             print(x.shape)
             rnn_pred.append(x)
-
-            # for i, cell in enumerate(self.cells):
-            #     x = hiddens[i - 1] if i > 0 else x
-            #     hiddens[i] = cell(x, hiddens[i])
-            #     out = hiddens[i]
-            #     # teacher forcing
-            #     if i == len(self.cells) - 1:
-            #         temp_out = self.scoring(out)
-            #         x = F.gumbel_softmax(temp_out, hard=True)
-            # rnn_pred.append(out)
 
         rnn_pred = torch.stack(rnn_pred)
         output_flatten = torch.cat(
