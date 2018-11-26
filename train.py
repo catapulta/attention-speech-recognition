@@ -351,7 +351,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 1
     BATCH_SIZE = 64
 
     model = LAS(num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
