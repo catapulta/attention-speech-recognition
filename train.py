@@ -302,8 +302,8 @@ class LanguageModelTrainer:
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = []
-            idxs = (prediction[:, 1:] == 0).nonzero()
-            for i in range(len(prediction)):
+            idxs = (rand_pred[:, 1:] == 0).nonzero()
+            for i in range(len(rand_pred)):
                 idx = idxs[idxs[:, 0] == i, 1].min() + 1 if len(idxs) > 0 else torch.Tensor([prediction.shape[1]])
                 lens.append(idx)
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
