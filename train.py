@@ -289,9 +289,10 @@ class LanguageModelTrainer:
                 scores = scores.squeeze(1)
                 scores = F.softmax(scores, dim=1)  # batch, num_classes
                 words = torch.multinomial(scores, 1, replacement=False).float()
-                rand_pred.append(words)
+                rand_pred.append(words.cpu())
                 scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
+            rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
             lens = torch.argmin(rand_pred, dim=1).long().squeeze(1).tolist()  # finds the 0s in the prediction
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
