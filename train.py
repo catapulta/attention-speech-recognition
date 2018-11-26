@@ -28,7 +28,7 @@ class UtteranceDataset(Dataset):
                 self.labels.append(words)
             self.labels = np.array(self.labels)
         self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -170,7 +170,7 @@ class LanguageModelTrainer:
             torch.save(self.model.state_dict(), "models/{}.pt".format(epoch))
 
             # every 1 epochs, print validation statistics
-            epochs_print = 1
+            epochs_print = 10
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
                 with torch.no_grad():
                     self.model.eval()
@@ -361,7 +361,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 1
+    NUM_EPOCHS = 100
     BATCH_SIZE = 64
 
     model = LAS(num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
