@@ -302,7 +302,7 @@ class LanguageModelTrainer:
             idxs = (rand_pred[:, 1:] == 0)
             for i in range(len(rand_pred)):
                 idx = idxs[idxs[:, 0] == i, 1]
-                lens.append( idx.min() + 1 if len(idx) > 0 else rand_pred.shape[1] )
+                lens.append( idx.min() + 1 if len(idx) > 0 else rand_pred.shape[1]-1 )
             assert len(lens) == len(rand_pred), 'lens and prediction dont match'
             rand_pred = [rand_pred[i, :lens[i]+1] for i in range(len(rand_pred))]  # cut excess words
             seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
