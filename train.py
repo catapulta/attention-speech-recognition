@@ -183,6 +183,7 @@ class LanguageModelTrainer:
                         idx = np.random.randint(0, len(val_inputs))
                         print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
                         val_output, feature_lengths = self.gen_greedy_search(val_inputs, 190)
+                        pdb.set_trace()
                         print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
                         ls += self.LD.forward(val_output, val_labels)
                         lens += len(val_inputs)
