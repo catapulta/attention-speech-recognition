@@ -235,9 +235,9 @@ class LanguageModelTrainer:
             preds = []
             for i, inputs in enumerate(self.test_loader):
                 pred = self.gen_random_search(inputs, num_paths, max_len)
-                pred += [''.join([self.chars[c.long()] for c in obs]) for obs in pred]
-                print(pred)
+                preds += [''.join([self.chars[c.long()] for c in obs]) for obs in pred]
                 preds.append(pred)
+            print(preds)
             return preds
 
     def gen_greedy_search(self, data_batch, max_len):
