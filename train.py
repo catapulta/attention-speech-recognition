@@ -154,7 +154,7 @@ class LanguageModelTrainer:
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
                     img_buf.seek(0)
-                    vLog.log_img('attention', img_buf, self.epoch)
+                    vLog.log_img('attention', img_buf, self.epochs)
 
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
@@ -203,7 +203,7 @@ class LanguageModelTrainer:
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
                     img_buf.seek(0)
-                    vLog.log_img('attention', img_buf, self.epoch)
+                    vLog.log_img('attention', img_buf, self.epochs)
                 ls += self.LD.forward(val_output, val_labels)
                 lens += len(val_inputs)
             ls /= lens
