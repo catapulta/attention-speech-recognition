@@ -101,7 +101,7 @@ class LanguageModelTrainer:
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
         self.criterion = self.criterion.cuda() if torch.cuda.is_available() else self.criterion
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=2)
         self.LD = Levenshtein(self.chars)
@@ -154,7 +154,7 @@ class LanguageModelTrainer:
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
                     img_buf.seek(0)
-                    vLog.log_img('attention', img_buf, self.epochs)
+                    tLog.log_img('attention', img_buf, self.epochs)
 
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
@@ -223,7 +223,7 @@ class LanguageModelTrainer:
 
     def print_training(self, batch_num, batch_size, loss, batch_print):
         t = 'At {:.0f}% of epoch {}'.format(
-            batch_num / self.loader.dataset.num_entries * 100, self.epochs)
+            batch_num * batch_size / self.loader.dataset.num_entries * 100, self.epochs)
         print(t)
         logging.info(t)
         t = "Training perplexity: {}".format(np.exp(loss / batch_print))
@@ -395,9 +395,9 @@ if __name__ == '__main__':
             # if name not in own_state:
             if name not in own_state:
                     continue
-            if isinstance(param, torch.nn.Parameter):
+            # if isinstance(param, torch.nn.Parameter):
             # TODO
-            # if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
+            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
@@ -406,7 +406,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    # ckpt_path = 'models/60.pt'
+    ckpt_path = 'models/61.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
@@ -415,8 +415,8 @@ if __name__ == '__main__':
     utdst = UtteranceDataset(data_path='./data/train.npy', label_path='./data/train_transcripts.npy')
     val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
     test_utdst = UtteranceDataset('./data/test.npy', test=True)
-    loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=6)
-    val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=6)
+    loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
+    val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
     trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
