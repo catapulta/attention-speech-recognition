@@ -12,7 +12,7 @@ class Logger(object):
         image = tf.image.decode_png(img_buf.getvalue(), channels=4)
         image = tf.expand_dims(image, 0)
         summary = tf.summary.image(title, image, max_outputs=1)
-        self.writer.add_summary(summary, step)
+        self.writer.add_summary(summary, step).eval()
 
     def log_scalar(self, tag, value, step):
         """Log a scalar variable.
