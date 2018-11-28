@@ -276,8 +276,8 @@ if __name__ == '__main__':
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
-    batches = 10
-    targets = [torch.ones(10)] + [torch.ones(3)] * (batches-1)
+    batches = 64
+    targets = [torch.ones(10)] + [torch.ones(9)] * (batches-1)
     inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches-1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)

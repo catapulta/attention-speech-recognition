@@ -101,7 +101,7 @@ class LanguageModelTrainer:
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
         self.criterion = self.criterion.cuda() if torch.cuda.is_available() else self.criterion
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=2)
         self.LD = Levenshtein(self.chars)
