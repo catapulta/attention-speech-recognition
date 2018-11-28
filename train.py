@@ -223,7 +223,7 @@ class LanguageModelTrainer:
 
     def print_training(self, batch_num, batch_size, loss, batch_print):
         t = 'At {:.0f}% of epoch {}'.format(
-            batch_num * batch_size / self.loader.dataset.num_entries * 100, self.epochs)
+            batch_num / self.loader.dataset.num_entries * 100, self.epochs)
         print(t)
         logging.info(t)
         t = "Training perplexity: {}".format(np.exp(loss / batch_print))
