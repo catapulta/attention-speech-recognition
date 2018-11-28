@@ -395,9 +395,9 @@ if __name__ == '__main__':
             # if name not in own_state:
             if name not in own_state:
                     continue
-            # if isinstance(param, torch.nn.Parameter):
+            if isinstance(param, torch.nn.Parameter):
             # TODO
-            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
+            # if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
@@ -406,7 +406,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/60.pt'
+    # ckpt_path = 'models/60.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
