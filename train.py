@@ -147,7 +147,7 @@ class LanguageModelTrainer:
 
                 # plot in tensorboard
                 if batch_num % batch_print * 2 == 0 and batch_num != 0:
-                    x = self.model.decoder.plot_attention.cpu().numpy()
+                    x = self.model.decoder.plot_attention.cpu().detach().numpy()
                     plt.figure()
                     plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
                     plt.savefig('attention.png')
@@ -167,7 +167,7 @@ class LanguageModelTrainer:
             # log values and gradients of parameters (histogram summary)
             for tag, value in self.model.named_parameters():
                 tag = tag.replace('.', '/')
-                tLog.log_histogram(tag, value.data.cpu().numpy(), self.epochs)
+                tLog.log_histogram(tag, value.data.cpu().detach().numpy(), self.epochs)
                 if value.grad is not None:
                     tLog.log_histogram(tag + '/grad', value.grad.data.cpu().numpy(), self.epochs)
                 else:
