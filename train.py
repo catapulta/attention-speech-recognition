@@ -147,7 +147,7 @@ class LanguageModelTrainer:
 
                 # plot in tensorboard
                 if batch_num % batch_print * 2 == 0 and batch_num != 0:
-                    x = self.model.decoder.plot_attention.numpy()
+                    x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
                     plt.imshow(x, interpolation='nearest')
                     plt.savefig('attention.png')
@@ -196,7 +196,7 @@ class LanguageModelTrainer:
                 print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
                 # plot in tensorboard
                 if j < 2:
-                    x = self.model.decoder.plot_attention.numpy()
+                    x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
                     plt.imshow(x, interpolation='nearest')
                     plt.savefig('attention.png')
@@ -407,7 +407,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/37.pt'
+    ckpt_path = 'models/60.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
