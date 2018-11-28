@@ -134,6 +134,7 @@ class DecoderRNN(nn.Module):
         # create attention
         self.query = nn.Linear(self.hidden_size, self.key_size)
         self.query = self.query.cuda() if torch.cuda.is_available() else self.query
+        self.plot_attention = []
 
         # create scoring
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
@@ -174,6 +175,8 @@ class DecoderRNN(nn.Module):
             matrix_mask[i, 0, :mask] = 1
         matrix_mask = matrix_mask.cuda() if torch.cuda.is_available() else matrix_mask
 
+        self.plot_attention = []
+
         rnn_pred = []
         for t in range(lens[0]):
             # teacher forcing
@@ -188,10 +191,13 @@ class DecoderRNN(nn.Module):
             else:
                 x = gumbel_x
 
-            last_hidden = self.init_hidden[-1] if t == 0 else self.init_hidden[-1]
-            last_hidden = last_hidden.expand(batch_size, -1)
-            query = self.query(last_hidden).unsqueeze(0)  # 1, batch_size, hidden_size
-
+            if t == 0:
+                last_hidden = self.init_hidden[-1] if t == 0 else self.init_hidden[-1]
+                last_hidden = last_hidden.expand(batch_size, -1)
+            else:
+                last_hidden = hiddens[-1]
+            query = self.query(last_hidden).unsqueeze(0)  # 1, batch_size, key_size
+            
             # attention calculation
             # Your key and query needs to have the same dim as you multiply (1,128) Q with (128,T)
             # key for getting the energies for all timesteps. Once you have that (1,T), you simply
@@ -200,9 +206,10 @@ class DecoderRNN(nn.Module):
 
             # query: 1, batch_size, hidden_size || keys: max_len, batch_size, key_size
             energy = torch.bmm(query.permute(1, 0, 2), keys.permute(1, 2, 0))  # batch_size, 1, max_len
+            energy = energy * matrix_mask  # mask energy
             attention = F.softmax(energy, dim=2)  # along seq_len: batch_size, 1, max_len
-            attention = attention * matrix_mask  # mask attention
-            attention = F.normalize(attention, p=1, dim=2)
+            # attention = F.normalize(attention, p=1, dim=2)
+            self.plot_attention.append(attention[0, 0])
             # context: values: max_len, batch_size, value_size
             context = torch.bmm(attention, values.permute(1, 0, 2))  # batch_size, 1, value_size
             context = context.permute(1, 0, 2)  # 1, batch_size, value_size
@@ -221,6 +228,7 @@ class DecoderRNN(nn.Module):
                     gumbel_x = F.gumbel_softmax(temp_out, hard=True)
             rnn_pred.append(x)
 
+        self.plot_attention = torch.stack(self.plot_attention, dim=0)
         rnn_pred = torch.stack(rnn_pred)
         output_flatten = torch.cat(
             [rnn_pred[:lens[i], i] for i in
@@ -287,7 +295,6 @@ if __name__ == '__main__':
     # targets = torch.cat((targets.long(), targets.long()), dim=1)
     print(scores[:, :, :idx].shape, targets[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], targets[:, 1:].long())
-    print(loss.shape)
     print(loss)
     loss.backward()
     optimizer.step()

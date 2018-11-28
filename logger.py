@@ -8,6 +8,12 @@ class Logger(object):
     def __init__(self, log_dir):
         self.writer = tf.summary.FileWriter(log_dir)
 
+    def log_img(self, title, img_buf, step):
+        image = tf.image.decode_png(img_buf.getvalue(), channels=4)
+        image = tf.expand_dims(image, 0)
+        summary = tf.summary.image(title, image, max_outputs=1)
+        self.writer.add_summary(summary.eval(), step)
+
     def log_scalar(self, tag, value, step):
         """Log a scalar variable.
         Parameter

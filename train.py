@@ -7,6 +7,8 @@ import Levenshtein as L
 import logging
 from model import LAS
 import pdb
+import matplotlib.pyplot as plt
+import io
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 logging.basicConfig(filename='train.log', level=logging.DEBUG)
@@ -27,8 +29,8 @@ class UtteranceDataset(Dataset):
                                  + [0])
                 self.labels.append(words)
             self.labels = np.array(self.labels)
-        self.num_entries = len(self.data)
-        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        # self.num_entries = len(self.data)
+        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -65,7 +67,6 @@ def collate(batch):
         utts = [utts[i] for i in seq_order]
         return utts
 
-
 class Levenshtein:
     def __init__(self, charmap):
         self.label_map = charmap
@@ -92,32 +93,26 @@ class LanguageModelTrainer:
         self.val_loader = val_loader
         self.test_loader = test_loader
         self.train_losses = []
-        self.val_losses = []
-        self.predictions = []
-        self.predictions_test = []
-        self.generated_logits = []
-        self.generated = []
-        self.generated_logits_test = []
-        self.generated_test = []
-        self.epochs = 6
+        self.val_metric = []
+        self.epochs = 0
         self.max_epochs = max_epochs
         self.steps = 0
+        self.best_rate = 1e10
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
         self.criterion = self.criterion.cuda() if torch.cuda.is_available() else self.criterion
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=2)
         self.LD = Levenshtein(self.chars)
-        self.best_rate = 1e10
 
     def train(self):
         self.model.train()  # set to training mode
-        for epoch in range(self.max_epochs):
+        for epoch in range(self.epochs, self.max_epochs):
             epoch_loss = 0
             training_epoch_loss = 0
             for batch_num, (inputs, targets) in enumerate(self.loader):
-                # # debug
+                # # debug gradients
                 # # Save init values
                 # old_state_dict = {}
                 # for key in model.state_dict():
@@ -150,6 +145,17 @@ class LanguageModelTrainer:
                     self.print_training(batch_num, self.loader.batch_size, training_epoch_loss, batch_print)
                     training_epoch_loss = 0
 
+                # plot in tensorboard
+                if batch_num % batch_print * 2 == 0 and batch_num != 0:
+                    x = self.model.decoder.plot_attention.numpy()
+                    plt.figure()
+                    plt.imshow(x, interpolation='nearest')
+                    plt.savefig('attention.png')
+                    img_buf = io.BytesIO()
+                    plt.savefig(img_buf, format='png')
+                    img_buf.seek(0)
+                    vLog.log_img('attention', img_buf, self.epoch)
+
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
             self.scheduler.step(epoch_loss)
@@ -167,38 +173,53 @@ class LanguageModelTrainer:
                 else:
                     print('Parameter', tag, 'has no gradient.')
             # save
-            torch.save(self.model.state_dict(), "models/{}.pt".format(epoch))
+            torch.save(self.model.state_dict(), "models/{}.pt".format(self.epochs))
 
             # every 1 epochs, print validation statistics
             epochs_print = 10
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
-                with torch.no_grad():
-                    self.model.eval()
-                    t = "#########  Epoch {} #########".format(self.epochs)
-                    print(t)
-                    logging.info(t)
-                    ls = 0
-                    lens = 0
-                    for j, (val_inputs, val_labels) in (enumerate(self.val_loader)):
-                        idx = np.random.randint(0, len(val_inputs))
-                        print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
-                        val_output, feature_lengths = self.gen_greedy_search(val_inputs, 190)
-                        print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
-                        ls += self.LD.forward(val_output, val_labels)
-                        lens += len(val_inputs)
-                    ls /= lens
-                    t = "Validation LD {}:".format(ls)
-                    print(t)
-                    logging.info(t)
-                    t = '--------------------------------------------'
-                    print(t)
-                    logging.info(t)
-                    # log loss
-                    vLog.log_scalar('LD', ls, self.epochs)
-                    if self.best_rate > ls:
-                        torch.save(self.model.state_dict(), "models/best.pt")
-                        self.best_rate = ls
-                    self.model.train()
+                self.validate()
+
+    def validate(self, save=True):
+        with torch.no_grad():
+            self.model.eval()
+            t = "#########  Validating epoch {} #########".format(self.epochs)
+            print(t)
+            logging.info(t)
+            ls = 0
+            lens = 0
+            for j, (val_inputs, val_labels) in (enumerate(self.val_loader)):
+                idx = np.random.randint(0, len(val_inputs))
+                print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
+                val_output = self.gen_greedy_search(val_inputs, 190)
+                # val_output = self.gen_random_search(val_inputs, 190, 100)
+                print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
+                # plot in tensorboard
+                if j < 2:
+                    x = self.model.decoder.plot_attention.numpy()
+                    plt.figure()
+                    plt.imshow(x, interpolation='nearest')
+                    plt.savefig('attention.png')
+                    img_buf = io.BytesIO()
+                    plt.savefig(img_buf, format='png')
+                    img_buf.seek(0)
+                    vLog.log_img('attention', img_buf, self.epoch)
+                ls += self.LD.forward(val_output, val_labels)
+                lens += len(val_inputs)
+            ls /= lens
+            self.val_metric.append(ls)
+            t = "Validation LD {}:".format(ls)
+            print(t)
+            logging.info(t)
+            t = '--------------------------------------------'
+            print(t)
+            logging.info(t)
+            # log loss
+            vLog.log_scalar('LD', ls, self.epochs)
+            if self.best_rate > ls and save:
+                torch.save(self.model.state_dict(), "models/best.pt")
+                self.best_rate = ls
+            self.model.train()
 
     def print_training(self, batch_num, batch_size, loss, batch_print):
         t = 'At {:.0f}% of epoch {}'.format(
@@ -224,6 +245,8 @@ class LanguageModelTrainer:
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
+        loss = loss.sum(dim=1)
+        loss = loss.mean()
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -269,7 +292,7 @@ class LanguageModelTrainer:
         prediction = [prediction[i, :lens[i].long()+1] for i in range(len(prediction))]
         seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
         prediction = [prediction[i] for i in seq_order]
-        return prediction, lens
+        return prediction
 
     def gen_random_search(self, data_batch, random_paths, max_len):
         '''
@@ -361,8 +384,8 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 100
-    BATCH_SIZE = 32
+    NUM_EPOCHS = 1
+    BATCH_SIZE = 34
 
     model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
                  decoder_hidden=512, cnn_compression=2, enc_bidirectional=True, teacher=0.0)
@@ -370,9 +393,12 @@ if __name__ == '__main__':
     def load_my_state_dict(net, state_dict):
         own_state = net.state_dict()
         for name, param in state_dict.items():
+            # if name not in own_state:
             if name not in own_state:
-                continue
-            if isinstance(param, torch.nn.Parameter):
+                    continue
+            # if isinstance(param, torch.nn.Parameter):
+            # TODO
+            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
@@ -380,6 +406,8 @@ if __name__ == '__main__':
 
 
     ckpt_path = 'models/best.pt'
+    # TODO
+    ckpt_path = 'models/37.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
@@ -392,8 +420,10 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=6)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
+    # TODO
+    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    write_results(trainer.test(max_len=190, num_paths=1000))
+    trainer.validate()
+    # write_results(trainer.test(max_len=190, num_paths=1000))
