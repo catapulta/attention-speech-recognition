@@ -149,7 +149,7 @@ class LanguageModelTrainer:
                 if batch_num % batch_print * 2 == 0 and batch_num != 0:
                     x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
-                    plt.imshow(x, interpolation='nearest', aspect='auto')
+                    plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
                     plt.savefig('attention.png')
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
@@ -198,7 +198,7 @@ class LanguageModelTrainer:
                 if j < 2:
                     x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
-                    plt.imshow(x, interpolation='nearest', aspect='auto')
+                    plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
                     plt.savefig('attention.png')
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
@@ -383,7 +383,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 2
+    NUM_EPOCHS = 100
     BATCH_SIZE = 34
 
     model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
@@ -419,10 +419,9 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=6)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    # TODO
-    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
+    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
-    trainer.validate()
+    # trainer.validate()
     write_results(trainer.test(max_len=190, num_paths=1000))
