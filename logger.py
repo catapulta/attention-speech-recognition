@@ -11,7 +11,12 @@ class Logger(object):
     def log_img(self, title, img_buf, step):
         image = tf.image.decode_png(img_buf.getvalue(), channels=4)
         image = tf.expand_dims(image, 0)
-        summary = tf.summary.image(title, image, max_outputs=1)
+        summary_op = tf.summary.image(title, image, max_outputs=1)
+        # Session
+        with tf.Session() as sess:
+            # Run
+            summary = sess.run(summary_op)
+
         self.writer.add_summary(summary, step).eval()
 
     def log_scalar(self, tag, value, step):
