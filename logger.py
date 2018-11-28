@@ -17,7 +17,7 @@ class Logger(object):
             # Run
             summary = sess.run(summary_op)
 
-        self.writer.add_summary(summary, step).eval()
+        self.writer.add_summary(summary, step)
 
     def log_scalar(self, tag, value, step):
         """Log a scalar variable.
