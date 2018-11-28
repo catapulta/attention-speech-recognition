@@ -29,8 +29,8 @@ class UtteranceDataset(Dataset):
                                  + [0])
                 self.labels.append(words)
             self.labels = np.array(self.labels)
-        # self.num_entries = len(self.data)
-        self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
+        self.num_entries = len(self.data)
+        # self.num_entries = int(len(self.data)*.001/2) if not ('test' in data_path or 'dev' in data_path) else int(len(self.data)*.1)
 
     def __getitem__(self, i):
         data = self.data[i]
@@ -149,7 +149,7 @@ class LanguageModelTrainer:
                 if batch_num % batch_print * 2 == 0 and batch_num != 0:
                     x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
-                    plt.imshow(x, interpolation='nearest')
+                    plt.imshow(x, interpolation='nearest', aspect='auto')
                     plt.savefig('attention.png')
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
@@ -198,7 +198,7 @@ class LanguageModelTrainer:
                 if j < 2:
                     x = self.model.decoder.plot_attention.cpu().numpy()
                     plt.figure()
-                    plt.imshow(x, interpolation='nearest')
+                    plt.imshow(x, interpolation='nearest', aspect='auto')
                     plt.savefig('attention.png')
                     img_buf = io.BytesIO()
                     plt.savefig(img_buf, format='png')
@@ -245,8 +245,7 @@ class LanguageModelTrainer:
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
-        loss = loss.sum(dim=1)
-        loss = loss.mean()
+        loss = loss / len(inputs)
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -384,7 +383,7 @@ if __name__ == '__main__':
 
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
-    NUM_EPOCHS = 1
+    NUM_EPOCHS = 2
     BATCH_SIZE = 34
 
     model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
@@ -426,4 +425,4 @@ if __name__ == '__main__':
 
     trainer.train()
     trainer.validate()
-    # write_results(trainer.test(max_len=190, num_paths=1000))
+    write_results(trainer.test(max_len=190, num_paths=1000))

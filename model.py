@@ -277,24 +277,25 @@ if __name__ == '__main__':
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 10
-    targets = [torch.ones(10)] * batches
-    inputs = [torch.ones((120, 40))] * batches
+    targets = [torch.ones(10)] + [torch.ones(3)] * (batches-1)
+    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches-1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
     print(scores.shape)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
 
-    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
-    input_targets = targets.clone()
+    input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
+    targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)
 
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
-    criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=0)
+    criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
     idx = -1 if scores.shape[2] > 1 else None
 
     # targets = torch.cat((targets.long(), targets.long()), dim=1)
     print(scores[:, :, :idx].shape, targets[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], targets[:, 1:].long())
+    loss = loss / len(inputs)
     print(loss)
-    loss.backward()
-    optimizer.step()
+    # loss.backward()
+    # optimizer.step()
