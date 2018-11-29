@@ -164,7 +164,7 @@ class EncoderCNN(nn.Module):
         scores_unflatten = rnn.pad_sequence(scores_unflatten)  # max_len, batch, kv_size
         key = scores_unflatten[:, :, :self.key_size]  # max_len, batch, key_size
         value = scores_unflatten[:, :, self.key_size:]  # max_len, batch, value_size
-        return key, value, hidden, mask  # return concatenated key, value, hidden state, mask
+        return key, value, mask  # return concatenated key, value, mask
 
 
 # Model that takes packed sequences in training
@@ -324,7 +324,7 @@ class LAS(nn.Module):
 
     def forward(self, input, target):
         enc_out = self.encoder(input)
-        out = self.decoder(target, enc_out[0], enc_out[1], enc_out[3])
+        out = self.decoder(target, enc_out[0], enc_out[1], enc_out[2])
         return out  # batch, max_len, num_chars
 
 
@@ -353,8 +353,8 @@ if __name__ == '__main__':
     # with torch.no_grad():
     # enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # print(enc_out[0].shape)
-    # print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
-    # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]))
+    # print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[2]).shape)
+    # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[2]))
     # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
     #           [torch.ones(20), torch.ones(1)]).shape)
 

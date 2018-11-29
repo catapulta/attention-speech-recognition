@@ -273,12 +273,12 @@ class LanguageModelTrainer:
         enc_out = self.model.encoder(data_batch)
         starts = [torch.zeros(1)] * len(data_batch)  # batch, 1
         prediction.append(torch.stack(starts, dim=0))
-        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+        scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[2])  # batch, 1, num_chars
         for i in range(max_len-1):
             scores = scores.squeeze(1)
             words = torch.argmax(scores, dim=1).float().unsqueeze(1)  # batch, 1
             prediction.append(words.cpu())
-            scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+            scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[2])  # batch, 1, num_chars
         prediction = torch.stack(prediction, dim=1)  # batch, max_len
         prediction = prediction.cuda() if torch.cuda.is_available() else prediction
 
@@ -311,13 +311,13 @@ class LanguageModelTrainer:
         for iter in range(random_paths):
             rand_pred = []  # store batch_preds
             rand_pred.append(torch.stack(starts, dim=0))
-            scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[3])  # batch, 1, num_chars
+            scores = self.model.decoder(starts, enc_out[0], enc_out[1], enc_out[2])  # batch, 1, num_chars
             for t in range(max_len-2):
                 scores = scores.squeeze(1)
                 scores = F.softmax(scores, dim=1)  # batch, num_classes
                 words = torch.multinomial(scores, 1, replacement=False).float()
                 rand_pred.append(words.cpu())
-                scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[3])
+                scores = self.model.decoder(words, enc_out[0], enc_out[1], enc_out[2])
             rand_pred = torch.stack(rand_pred, dim=1)  # batch, max_len
             rand_pred = rand_pred.cuda() if torch.cuda.is_available() else rand_pred
             # remove excess words
@@ -332,7 +332,7 @@ class LanguageModelTrainer:
             rand_pred = [rand_pred[i] for i in seq_order]
             prediction.append(rand_pred)  # random_paths, batch, max_len
             # compute scores given the predicted sequence
-            scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[3])
+            scores = self.model.decoder(rand_pred, enc_out[0], enc_out[1], enc_out[2])
             scores = scores.permute(0, 2, 1)  # batch_size, num_classes, max_len
             # compute loss
             # rand_pred = torch.nn.utils.rnn.pad_sequence(rand_pred, batch_first=True, padding_value=-99)
