@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import character_list
 import Levenshtein as L
 import logging
-from model import LAS
+from model import LAS, LAS2
 import pdb
 import matplotlib.pyplot as plt
 import io
@@ -387,8 +387,8 @@ if __name__ == '__main__':
     NUM_EPOCHS = 100
     BATCH_SIZE = 34
 
-    model = LAS(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=512,
-                 decoder_hidden=512, cnn_compression=2, enc_bidirectional=True, teacher=0.0)
+    model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=256,
+                 decoder_hidden=512, enc_bidirectional=True, teacher=0.0)
 
     def load_my_state_dict(net, state_dict):
         own_state = net.state_dict()
@@ -407,7 +407,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/8.pt'
+    ckpt_path = 'models/9999.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)

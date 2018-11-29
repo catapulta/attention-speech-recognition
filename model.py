@@ -6,6 +6,74 @@ import pdb
 import numpy as np
 
 
+class EncoderLSTM(nn.Module):
+    def __init__(self, key_size=128, value_size=256, nlayers=3, hidden_size=256, bidirectional=True):
+        super(EncoderLSTM, self).__init__()
+        self.key_size = key_size
+        self.value_size = value_size
+        self.kv_size = key_size + value_size
+        self.bidirectional = bidirectional
+        self.directions = 2 if bidirectional else 1
+        self.rnn_input_size = 40
+        self.hidden_size = hidden_size
+        self.nlayers = nlayers
+
+        self.rnn = []
+        self.init_hidden = []
+        rnn_input_size = self.rnn_input_size
+        for i in range(nlayers):
+            self.rnn.append(nn.GRU(input_size=rnn_input_size,
+                                   hidden_size=self.hidden_size,
+                                   num_layers=2,
+                                   bidirectional=self.bidirectional,
+                                   dropout=.1))
+            self.init_hidden.append(nn.Parameter(torch.randn(self.directions *2, 1, hidden_size)))
+            rnn_input_size = self.hidden_size*4
+        self.init_hidden = nn.ParameterList(self.init_hidden)
+        self.rnn = nn.ModuleList(self.rnn)
+
+        # def key/value
+        hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
+        hidden_size = hidden_size * 2
+        self.scoring = nn.Sequential(
+            nn.BatchNorm1d(hidden_size),
+            nn.Sigmoid(),
+            nn.Linear(hidden_size, self.kv_size)
+        )
+
+        # initialize
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, seq_list):
+        batch_size = len(seq_list)
+        mask = [len(s) for s in seq_list]  # lens of all inputs (sorted by loader)
+        seq_list = rnn.pad_sequence(seq_list, batch_first=False)  # max_len, batch_size, features
+        x = seq_list.cuda() if torch.cuda.is_available() else seq_list
+
+        for i in range(self.nlayers):
+            x, _ = self.rnn[i](x, self.init_hidden[i].expand(-1, batch_size, -1).contiguous())  # max_len/k, batch_size, features
+            s = x.shape
+            x = x.permute(1, 0, 2).contiguous().view(batch_size, s[0] // 2, s[2] * 2).permute(1, 0, 2)
+
+        shrink_factor = 2 ** self.nlayers
+        mask = [l // shrink_factor for l in mask]
+        output_flatten = torch.cat(
+            [x[:mask[i], i] for i in
+             range(batch_size)])  # concatenated output (batch_size, sum(reduced_len), hidden)
+        scores_flatten = self.scoring(output_flatten)  # concatenated scores (batch_size, sum(reduced_len), kv_size)
+        cum_lens = np.cumsum([0] + mask)
+        scores_unflatten = [scores_flatten[cum_lens[i]:cum_lens[i + 1]] for i in range(batch_size)]
+        scores_unflatten = rnn.pad_sequence(scores_unflatten)  # max_len, batch, kv_size
+        key = scores_unflatten[:, :, :self.key_size]  # max_len, batch, key_size
+        value = scores_unflatten[:, :, self.key_size:]  # max_len, batch, value_size
+        return key, value, mask  # return concatenated key, value, hidden state, mask
+
+
 # Model that takes packed sequences in training
 class EncoderCNN(nn.Module):
     def __init__(self, key_size=128, value_size=256, nlayers=3, hidden_size=512,
@@ -156,9 +224,18 @@ class DecoderRNN(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, seq_list, keys, values, masks):
+        assert len(seq_list) == keys.shape[1], 'batch sizes must match'
+        assert len(masks) == keys.shape[1], 'batch sizes must match'
+        assert values.shape[1] == keys.shape[1], 'batch sizes must match'
 
+        # sort list according to target length
         batch_size = len(seq_list)
-        lens = [len(s) for s in seq_list]  # lens of all inputs (sorted by loader)
+        lens = [len(s) for s in seq_list]  # lens of all inputs
+        seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
+        keys = torch.stack([keys[:, i] for i in seq_order], dim=1)
+        values = torch.stack([values[:, i] for i in seq_order], dim=1)
+        masks = [masks[i] for i in seq_order]
+        seq_list = [seq_list[i] for i in seq_order]
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
@@ -190,7 +267,7 @@ class DecoderRNN(nn.Module):
             else:
                 last_hidden = hiddens[-1]
             query = self.query(last_hidden).unsqueeze(0)  # 1, batch_size, key_size
-            
+
             # attention calculation
             # Your key and query needs to have the same dim as you multiply (1,128) Q with (128,T)
             # key for getting the energies for all timesteps. Once you have that (1,T), you simply
@@ -250,28 +327,43 @@ class LAS(nn.Module):
         return out  # batch, max_len, num_chars
 
 
+class LAS2(nn.Module):
+    def __init__(self, num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=5, encoder_hidden=256,
+                 decoder_hidden=512, enc_bidirectional=True, teacher=0.4):
+        super(LAS2, self).__init__()
+        self.encoder = EncoderLSTM(key_size=key_size, value_size=value_size, nlayers=encoder_depth,
+                                   hidden_size=encoder_hidden, bidirectional=enc_bidirectional)
+        self.decoder = DecoderRNN(num_chars=num_chars, key_size=key_size, value_size=value_size, nlayers=decoder_depth,
+                                  hidden_size=decoder_hidden, teacher=teacher, bidirectional=False)
+
+    def forward(self, input, target):
+        enc_out = self.encoder(input)
+        out = self.decoder(target, enc_out[0], enc_out[1], enc_out[2])
+        return out  # batch, max_len, num_chars
+
+
 if __name__ == '__main__':
     import character_list
 
     enc = EncoderCNN(cnn_compression=2)
     dec = DecoderRNN(len(character_list.LETTERS) + 1)
-    las = LAS()
+    las = LAS2()
 
     # with torch.no_grad():
-        # enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
-        # print(enc_out[0].shape)
-        # print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
-        # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]))
-        # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
-        #           [torch.ones(20), torch.ones(1)]).shape)
+    # enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
+    # print(enc_out[0].shape)
+    # print(dec([torch.ones(5), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]).shape)
+    # print(dec([torch.ones(3), torch.ones(2)], enc_out[0], enc_out[1], enc_out[3]))
+    # print(las([torch.ones((120, 40)), torch.ones((90, 40))],
+    #           [torch.ones(20), torch.ones(1)]).shape)
 
     # with torch.no_grad():
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 64
-    targets = [torch.ones(10)] + [torch.ones(9)] * (batches-1)
-    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches-1)
+    targets = [torch.ones(10)] + [torch.ones(9)] * (batches - 1)
+    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches - 1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
     print(scores.shape)
