@@ -162,13 +162,6 @@ class DecoderRNN(nn.Module):
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
-        # hiddens = nn.ParameterList()
-        # for hidden in self.init_hidden:
-        #     hiddens.append(hidden.expand(batch_size, -1).contiguous())
-        # hiddens = self.init_hidden
-        first_hidden = self.first_hidden.expand(batch_size, -1).contiguous()
-
-
         hiddens = []
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
@@ -192,7 +185,7 @@ class DecoderRNN(nn.Module):
                 x = gumbel_x
 
             if t == 0:
-                last_hidden = self.init_hidden[-1] if t == 0 else self.init_hidden[-1]
+                last_hidden = self.init_hidden[-1]
                 last_hidden = last_hidden.expand(batch_size, -1)
             else:
                 last_hidden = hiddens[-1]
@@ -289,13 +282,17 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(las.parameters(), lr=1e-3, weight_decay=1e-6)
     # optimizer = torch.optim.Adam(enc.parameters(), lr=1e-3, weight_decay=1e-6)
-    criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=-99)
+    criterion2 = torch.nn.CrossEntropyLoss(reduction='none', ignore_index=-99)
     idx = -1 if scores.shape[2] > 1 else None
 
     # targets = torch.cat((targets.long(), targets.long()), dim=1)
     print(scores[:, :, :idx].shape, targets[:, 1:].shape)
     loss = criterion(scores[:, :, :idx], targets[:, 1:].long())
-    loss = loss / len(inputs)
+    loss2 = criterion2(scores[:, :, :idx], targets[:, 1:].long())
+    loss = loss
+    loss2 = loss2.sum() / loss2.shape[0] / loss2.shape[1]
     print(loss)
+    print(loss2)
     # loss.backward()
     # optimizer.step()

@@ -101,7 +101,7 @@ class LanguageModelTrainer:
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
         self.criterion = self.criterion.cuda() if torch.cuda.is_available() else self.criterion
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=2)
         self.LD = Levenshtein(self.chars)
@@ -134,9 +134,10 @@ class LanguageModelTrainer:
 
                 # train
                 loss = self.train_batch(inputs, targets)
-                epoch_loss += loss
-                training_epoch_loss += loss
+                epoch_loss += np.exp(loss)
+                training_epoch_loss += np.exp(loss)
                 self.steps += 1
+                # teacher forcing
                 if self.steps % 1e6 == 0:
                     self.model.decoder.teacher = min(self.model.decoder.teacher + 0.1, 0.4)
                 # training print
@@ -146,7 +147,7 @@ class LanguageModelTrainer:
                     training_epoch_loss = 0
 
                 # plot in tensorboard
-                if batch_num % batch_print * 2 == 0 and batch_num != 0:
+                if batch_num % batch_print * 3 == 0:
                     x = self.model.decoder.plot_attention.cpu().detach().numpy()
                     plt.figure()
                     plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
@@ -160,7 +161,7 @@ class LanguageModelTrainer:
             self.epochs += 1
             self.scheduler.step(epoch_loss)
             print('[TRAIN]  Epoch [%d/%d]   Perplexity: %.4f'
-                  % (self.epochs, self.max_epochs, np.exp(epoch_loss)))
+                  % (self.epochs, self.max_epochs, epoch_loss))
             self.train_losses.append(epoch_loss)
             # log loss
             tLog.log_scalar('training_loss', epoch_loss, self.epochs)
@@ -226,7 +227,7 @@ class LanguageModelTrainer:
             batch_num * batch_size / self.loader.dataset.num_entries * 100, self.epochs)
         print(t)
         logging.info(t)
-        t = "Training perplexity: {}".format(np.exp(loss / batch_print))
+        t = "Training perplexity: {}".format(loss / batch_print)
         print(t)
         logging.info(t)
         t = '--------------------------------------------'
@@ -245,7 +246,7 @@ class LanguageModelTrainer:
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
-        loss = loss / len(inputs)
+        loss = loss / len(scores)
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
@@ -395,9 +396,9 @@ if __name__ == '__main__':
             # if name not in own_state:
             if name not in own_state:
                     continue
-            # if isinstance(param, torch.nn.Parameter):
+            if isinstance(param, torch.nn.Parameter):
             # TODO
-            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
+            # if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
@@ -406,7 +407,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/61.pt'
+    ckpt_path = 'models/7.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
