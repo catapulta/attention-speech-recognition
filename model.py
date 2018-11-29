@@ -54,6 +54,7 @@ class EncoderLSTM(nn.Module):
         mask = [len(s) for s in seq_list]  # lens of all inputs (sorted by loader)
         seq_list = rnn.pad_sequence(seq_list, batch_first=False)  # max_len, batch_size, features
         x = seq_list.cuda() if torch.cuda.is_available() else seq_list
+        x = x[:2**self.nlayers * (x.shape[0] // (2**self.nlayers))]
 
         for i in range(self.nlayers):
             x, _ = self.rnn[i](x, self.init_hidden[i].expand(-1, batch_size, -1).contiguous())  # max_len/k, batch_size, features
@@ -363,7 +364,7 @@ if __name__ == '__main__':
     # las.eval()
     batches = 64
     targets = [torch.ones(10)] + [torch.ones(9)] * (batches - 1)
-    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches - 1)
+    inputs = [torch.ones((120, 51))] + [torch.ones((90, 51))] * (batches - 1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
     print(scores.shape)
