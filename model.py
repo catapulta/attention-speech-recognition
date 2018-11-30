@@ -297,8 +297,6 @@ class DecoderRNN(nn.Module):
             rnn_pred.append(x)
 
         self.plot_attention = torch.stack(self.plot_attention, dim=0)
-        print('att', self.plot_attention.shape)
-        print('val', values.shape)
 
         rnn_pred = torch.stack(rnn_pred)
         output_flatten = torch.cat(
