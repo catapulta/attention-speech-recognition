@@ -36,7 +36,7 @@ class EncoderLSTM(nn.Module):
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         hidden_size = hidden_size * 2
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -114,7 +114,7 @@ class EncoderCNN(nn.Module):
         # def key/value
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -208,10 +208,7 @@ class DecoderRNN(nn.Module):
         # create scoring
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
-            nn.Sigmoid(),
-            nn.Linear(hidden_size, self.hidden_size),
-            nn.BatchNorm1d(self.hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(self.hidden_size, self.num_chars)
         )
@@ -279,7 +276,6 @@ class DecoderRNN(nn.Module):
             energy = torch.bmm(query.permute(1, 0, 2), keys.permute(1, 2, 0))  # batch_size, 1, max_len
             energy = energy * matrix_mask  # mask energy
             attention = F.softmax(energy, dim=2)  # along seq_len: batch_size, 1, max_len
-            print(attention.sum())
             # attention = F.normalize(attention, p=1, dim=2)
             self.plot_attention.append(attention[0, 0])
             # context: values: max_len, batch_size, value_size
@@ -364,8 +360,8 @@ if __name__ == '__main__':
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 64
-    targets = [torch.ones(10)] + [torch.ones(9)] * (batches - 1)
-    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches - 1)
+    targets = [torch.ones(10)] #+ [torch.ones(9)] * (batches - 1)
+    inputs = [torch.ones((120, 40))] #+ [torch.ones((90, 40))] * (batches - 1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
     print(scores.shape)
