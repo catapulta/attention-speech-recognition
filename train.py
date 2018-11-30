@@ -160,8 +160,10 @@ class LanguageModelTrainer:
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
             self.scheduler.step(epoch_loss)
-            print('[TRAIN]  Epoch [%d/%d]   Perplexity: %.4f'
-                  % (self.epochs, self.max_epochs, epoch_loss))
+            t = '[TRAIN]  Epoch [%d/%d]   Perplexity: %.4f' \
+                % (self.epochs, self.max_epochs, epoch_loss)
+            print(t)
+            logging.info(t)
             self.train_losses.append(epoch_loss)
             # log loss
             tLog.log_scalar('training_loss', epoch_loss, self.epochs)
@@ -177,7 +179,7 @@ class LanguageModelTrainer:
             torch.save(self.model.state_dict(), "models/{}.pt".format(self.epochs))
 
             # every 1 epochs, print validation statistics
-            epochs_print = 10
+            epochs_print = 1
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
                 self.validate()
 
@@ -191,10 +193,14 @@ class LanguageModelTrainer:
             lens = 0
             for j, (val_inputs, val_labels) in (enumerate(self.val_loader)):
                 idx = np.random.randint(0, len(val_inputs))
-                print('Ground', ''.join([self.chars[j] for j in val_labels[idx]]))
+                t = 'Ground', ''.join([self.chars[j] for j in val_labels[idx]])
+                print(t)
+                logging.info(t)
                 val_output = self.gen_greedy_search(val_inputs, 190)
                 # val_output = self.gen_random_search(val_inputs, 190, 100)
-                print('Pred', ''.join([self.chars[j] for j in val_output[idx].long()]))
+                t = 'Pred', ''.join([self.chars[j] for j in val_output[idx].long()])
+                print(t)
+                logging.info(t)
                 # plot in tensorboard
                 if j < 2:
                     x = self.model.decoder.plot_attention.cpu().numpy()
@@ -385,7 +391,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 34
+    BATCH_SIZE = 1
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=256,
                  decoder_hidden=512, enc_bidirectional=True, teacher=0.0)
@@ -407,7 +413,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/10.pt'
+    ckpt_path = 'models/27.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
@@ -420,7 +426,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
+    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
