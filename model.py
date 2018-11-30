@@ -7,7 +7,7 @@ import numpy as np
 
 
 class EncoderLSTM(nn.Module):
-    def __init__(self, key_size=128, value_size=256, nlayers=3, hidden_size=256, bidirectional=True):
+    def __init__(self, key_size=128, value_size=256, nlayers=2, hidden_size=256, bidirectional=True):
         super(EncoderLSTM, self).__init__()
         self.key_size = key_size
         self.value_size = value_size
@@ -297,6 +297,9 @@ class DecoderRNN(nn.Module):
             rnn_pred.append(x)
 
         self.plot_attention = torch.stack(self.plot_attention, dim=0)
+        print('att', self.plot_attention.shape)
+        print('val', values.shape)
+
         rnn_pred = torch.stack(rnn_pred)
         output_flatten = torch.cat(
             [rnn_pred[:lens[i], i] for i in
@@ -326,7 +329,7 @@ class LAS(nn.Module):
 
 
 class LAS2(nn.Module):
-    def __init__(self, num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=5, encoder_hidden=256,
+    def __init__(self, num_chars=33, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
                  decoder_hidden=512, enc_bidirectional=True, teacher=0.4):
         super(LAS2, self).__init__()
         self.encoder = EncoderLSTM(key_size=key_size, value_size=value_size, nlayers=encoder_depth,

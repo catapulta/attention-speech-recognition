@@ -394,7 +394,7 @@ if __name__ == '__main__':
     BATCH_SIZE = 1
     BATCH_SIZE_VAL = 64
 
-    model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=256,
+    model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
                  decoder_hidden=512, enc_bidirectional=True, teacher=0.0)
 
     def load_my_state_dict(net, state_dict):
@@ -414,7 +414,7 @@ if __name__ == '__main__':
 
     ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/xxxxxxx.pt'
+    ckpt_path = 'models/40.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
