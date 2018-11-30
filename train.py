@@ -392,6 +392,7 @@ if __name__ == '__main__':
 
     NUM_EPOCHS = 100
     BATCH_SIZE = 1
+    BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=4, encoder_hidden=256,
                  decoder_hidden=512, enc_bidirectional=True, teacher=0.0)
@@ -423,7 +424,7 @@ if __name__ == '__main__':
     val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
     test_utdst = UtteranceDataset('./data/test.npy', test=True)
     loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
-    val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate, num_workers=5)
+    val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
     trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
