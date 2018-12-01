@@ -94,7 +94,7 @@ class LanguageModelTrainer:
         self.test_loader = test_loader
         self.train_losses = []
         self.val_metric = []
-        self.epochs = 0
+        self.epochs = 36
         self.max_epochs = max_epochs
         self.steps = 0
         self.best_rate = 1e10
