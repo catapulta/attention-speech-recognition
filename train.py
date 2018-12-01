@@ -94,7 +94,7 @@ class LanguageModelTrainer:
         self.test_loader = test_loader
         self.train_losses = []
         self.val_metric = []
-        self.epochs = 41
+        self.epochs = 49
         self.max_epochs = max_epochs
         self.steps = 0
         self.best_rate = 1e10
@@ -424,7 +424,7 @@ if __name__ == '__main__':
         return net
 
     # TODO
-    ckpt_path = 'models/41.pt'
+    ckpt_path = 'models/49.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
