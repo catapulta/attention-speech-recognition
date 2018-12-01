@@ -101,7 +101,7 @@ class LanguageModelTrainer:
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-6)
         # self.optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, weight_decay=1e-6, momentum=0.9)
-        self.criterion = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=-99)
+        self.criterion = torch.nn.CrossEntropyLoss(reduction='elementwise_mean', ignore_index=-99)
         self.criterion = self.criterion.cuda() if torch.cuda.is_available() else self.criterion
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, factor=0.1, patience=2)
         self.LD = Levenshtein(self.chars)
@@ -255,7 +255,7 @@ class LanguageModelTrainer:
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
-        loss = loss / len(scores)
+        # loss = loss / len(scores)
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
