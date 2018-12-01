@@ -94,7 +94,7 @@ class LanguageModelTrainer:
         self.test_loader = test_loader
         self.train_losses = []
         self.val_metric = []
-        self.epochs = 36
+        self.epochs = 41
         self.max_epochs = max_epochs
         self.steps = 0
         self.best_rate = 1e10
@@ -245,8 +245,8 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         self.model.train()
-        input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
-        scores = self.model(inputs, input_targets)  # batch_size, seq_len, num_classes
+        # input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
+        scores = self.model(inputs, targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         idx = -1 if scores.shape[2] > 1 else None
 
@@ -424,7 +424,7 @@ if __name__ == '__main__':
         return net
 
     # TODO
-    ckpt_path = 'models/36.pt'
+    ckpt_path = 'models/41.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)

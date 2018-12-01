@@ -360,12 +360,11 @@ if __name__ == '__main__':
     #     enc_out = enc([torch.ones((120, 40)), torch.ones((90, 40))])
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
-    batches = 64
-    targets = [torch.ones(10)] #+ [torch.ones(9)] * (batches - 1)
-    inputs = [torch.ones((120, 40))] #+ [torch.ones((90, 40))] * (batches - 1)
+    batches = 2
+    targets = [torch.ones(10)] + [torch.ones(9)] * (batches - 1)
+    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches - 1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
-    print(scores.shape)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
 
     input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
