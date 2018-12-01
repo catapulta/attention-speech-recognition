@@ -156,6 +156,7 @@ class LanguageModelTrainer:
                     plt.savefig(img_buf, format='png')
                     img_buf.seek(0)
                     tLog.log_img('attention', img_buf, self.epochs)
+                    plt.close('all')
 
             epoch_loss = epoch_loss / (batch_num + 1)
             self.epochs += 1
@@ -178,6 +179,8 @@ class LanguageModelTrainer:
             # save
             torch.save(self.model.state_dict(), "models/{}.pt".format(self.epochs))
 
+
+            # TODO
             # every 1 epochs, print validation statistics
             epochs_print = 20
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
@@ -202,15 +205,15 @@ class LanguageModelTrainer:
                 print(t)
                 logging.info(t)
                 # plot in tensorboard
-                if j < 2:
-                    x = self.model.decoder.plot_attention.cpu().numpy()
-                    plt.figure()
-                    plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
-                    plt.savefig('attention.png')
-                    img_buf = io.BytesIO()
-                    plt.savefig(img_buf, format='png')
-                    img_buf.seek(0)
-                    vLog.log_img('attention', img_buf, self.epochs)
+                # if j < 2:
+                    # x = self.model.decoder.plot_attention.cpu().numpy()
+                    # plt.figure()
+                    # plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
+                    # plt.savefig('attention.png')
+                    # img_buf = io.BytesIO()
+                    # plt.savefig(img_buf, format='png')
+                    # img_buf.seek(0)
+                    # vLog.log_img('attention', img_buf, self.epochs)
                 ls += self.LD.forward(val_output, val_labels)
                 lens += len(val_inputs)
             ls /= lens
@@ -403,6 +406,7 @@ if __name__ == '__main__':
                 param.requires_grad = False
             dfs_freeze(child)
 
+    # TODO
     dfs_freeze(model.encoder)
 
     def load_my_state_dict(net, state_dict):
@@ -411,18 +415,16 @@ if __name__ == '__main__':
             # if name not in own_state:
             if name not in own_state:
                     continue
-            # if isinstance(param, torch.nn.Parameter):
+            if isinstance(param, torch.nn.Parameter):
             # TODO
-            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
+            # if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
         return net
 
-
-    ckpt_path = 'models/best.pt'
     # TODO
-    ckpt_path = 'models/111.pt'
+    ckpt_path = 'models/best.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
@@ -435,7 +437,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
+    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()

@@ -36,7 +36,7 @@ class EncoderLSTM(nn.Module):
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         hidden_size = hidden_size * 2
         self.scoring = nn.Sequential(
-            # nn.BatchNorm1d(hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -114,7 +114,7 @@ class EncoderCNN(nn.Module):
         # def key/value
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            # nn.BatchNorm1d(hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -208,7 +208,7 @@ class DecoderRNN(nn.Module):
         # create scoring
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            # nn.BatchNorm1d(hidden_size),
+            nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(self.hidden_size, self.num_chars)
         )
