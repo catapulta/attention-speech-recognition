@@ -182,7 +182,7 @@ class LanguageModelTrainer:
 
             # TODO
             # every 1 epochs, print validation statistics
-            epochs_print = 20
+            epochs_print = 15
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
                 self.validate()
 
@@ -407,7 +407,7 @@ if __name__ == '__main__':
             dfs_freeze(child)
 
     # TODO
-    dfs_freeze(model.encoder)
+    # dfs_freeze(model.encoder)
 
     def load_my_state_dict(net, state_dict):
         own_state = net.state_dict()
@@ -415,16 +415,16 @@ if __name__ == '__main__':
             # if name not in own_state:
             if name not in own_state:
                     continue
-            if isinstance(param, torch.nn.Parameter):
+            # if isinstance(param, torch.nn.Parameter):
             # TODO
-            # if isinstance(param, torch.nn.Parameter) and 'encoder' not in name:
+            if isinstance(param, torch.nn.Parameter) and 'encoder' not in name and 'query' not in name:
                 # backwards compatibility for serialized parameters
                 param = param.data
             own_state[name].copy_(param)
         return net
 
     # TODO
-    ckpt_path = 'models/best.pt'
+    ckpt_path = 'models/36.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
