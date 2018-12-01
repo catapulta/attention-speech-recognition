@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import character_list
 import Levenshtein as L
 import logging
-from model import LAS, LAS2
+from model import LAS2
 import pdb
 import matplotlib.pyplot as plt
 import io
@@ -179,7 +179,7 @@ class LanguageModelTrainer:
             torch.save(self.model.state_dict(), "models/{}.pt".format(self.epochs))
 
             # every 1 epochs, print validation statistics
-            epochs_print = 1
+            epochs_print = 20
             if self.epochs % epochs_print == 0 and not self.epochs == 0:
                 self.validate()
 
