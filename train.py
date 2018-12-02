@@ -393,7 +393,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
@@ -436,7 +436,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
+    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
