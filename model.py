@@ -274,9 +274,9 @@ class DecoderRNN(nn.Module):
 
             # query: 1, batch_size, hidden_size || keys: max_len, batch_size, key_size
             energy = torch.bmm(query.permute(1, 0, 2), keys.permute(1, 2, 0))  # batch_size, 1, max_len
-            energy = energy * matrix_mask  # mask energy
             attention = F.softmax(energy, dim=2)  # along seq_len: batch_size, 1, max_len
-            # attention = F.normalize(attention, p=1, dim=2)
+            attention = attention * matrix_mask  # mask attention
+            attention = F.normalize(attention, p=1, dim=2)
             self.plot_attention.append(attention[0, 0])
             # context: values: max_len, batch_size, value_size
             context = torch.bmm(attention, values.permute(1, 0, 2))  # batch_size, 1, value_size
