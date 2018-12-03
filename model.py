@@ -181,20 +181,23 @@ class DecoderRNN(nn.Module):
         self.nlayers = nlayers
 
         # create RNN
-        self.first_hidden = torch.nn.Parameter(torch.randn((1, self.hidden_size)))
+        # self.first_hidden = torch.nn.Parameter(torch.randn((1, self.hidden_size)))
         self.init_hidden = []
         self.cells = []
         for i in range(self.nlayers):
             if i == 0:
                 input_size = self.num_chars
-                hidden_size = self.hidden_size + self.value_size
+                hidden_size = self.hidden_size# + self.value_size
+                context_size = self.value_size
             elif i == 1:
                 input_size = self.hidden_size + self.value_size
                 hidden_size = self.hidden_size
+                context_size = 0
             else:
                 input_size = hidden_size = self.hidden_size
+                context_size = 0
             self.init_hidden.append(torch.nn.Parameter(torch.randn((1, hidden_size))))
-            self.cells.append(torch.nn.GRUCell(input_size, hidden_size, bias=True))
+            self.cells.append(torch.nn.GRUCell(input_size, hidden_size + context_size, bias=True))
         self.cells = nn.ModuleList(self.cells)
         self.init_hidden = nn.ParameterList(self.init_hidden)
 
@@ -236,6 +239,7 @@ class DecoderRNN(nn.Module):
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 
         hiddens = []
+
         matrix_mask = torch.zeros(keys.shape[1], 1, keys.shape[0])
         for i, mask in enumerate(masks):
             matrix_mask[i, 0, :mask] = 1
@@ -280,7 +284,7 @@ class DecoderRNN(nn.Module):
             context = torch.bmm(attention, values.permute(1, 0, 2))  # batch_size, 1, value_size
             context = context.permute(1, 0, 2)  # 1, batch_size, value_size
 
-            first_hidden = torch.cat([context.squeeze(0), self.first_hidden.expand(batch_size, -1)], dim=1)
+            first_hidden = torch.cat([context.squeeze(0), self.init_hidden[0].expand(batch_size, -1)], dim=1)
             for i, cell in enumerate(self.cells):
                 if t == 0:
                     hiddens.append(cell(x, self.init_hidden[i].expand(batch_size, -1) if i > 0 else first_hidden))
