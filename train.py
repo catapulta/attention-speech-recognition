@@ -94,7 +94,7 @@ class LanguageModelTrainer:
         self.test_loader = test_loader
         self.train_losses = []
         self.val_metric = []
-        self.epochs = 49
+        self.epochs = 0
         self.max_epochs = max_epochs
         self.steps = 0
         self.best_rate = 1e10
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 1
+    BATCH_SIZE = 34
     BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
@@ -430,7 +430,7 @@ if __name__ == '__main__':
         return net
 
     # TODO
-    ckpt_path = 'models/49.pt'
+    ckpt_path = 'models/best.pt'
     if os.path.isfile(ckpt_path):
         pretrained_dict = torch.load(ckpt_path, map_location=lambda storage, loc: storage)
         model = load_my_state_dict(model, pretrained_dict)
