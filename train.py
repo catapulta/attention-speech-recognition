@@ -141,13 +141,13 @@ class LanguageModelTrainer:
                 if self.steps % 1e6 == 0:
                     self.model.decoder.teacher = min(self.model.decoder.teacher + 0.1, 0.4)
                 # training print
-                batch_print = 40
+                batch_print = int(self.loader.dataset.num_entries * 0.05 / self.loader.batch_size)
                 if batch_num % batch_print == 0 and batch_num != 0:
                     self.print_training(batch_num, self.loader.batch_size, training_epoch_loss, batch_print)
                     training_epoch_loss = 0
 
                 # plot in tensorboard
-                if batch_num % (batch_print * 3) == 0:
+                if batch_num % (batch_print * 4) == 0:
                     x = self.model.decoder.plot_attention.cpu().detach().numpy()
                     plt.figure()
                     plt.imshow(x, interpolation='nearest', aspect='auto', cmap=plt.get_cmap(name='binary'))
@@ -393,7 +393,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 34
+    BATCH_SIZE = 1
     BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
@@ -439,7 +439,7 @@ if __name__ == '__main__':
     utdst = UtteranceDataset(data_path='./data/train.npy', label_path='./data/train_transcripts.npy')
     val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
     test_utdst = UtteranceDataset('./data/test.npy', test=True)
-    loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
+    loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
