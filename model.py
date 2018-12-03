@@ -18,8 +18,8 @@ class EncoderLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.nlayers = nlayers
 
-        self.rnn = []
-        self.init_hidden = []
+        self.rnn = nn.ModuleList()
+        self.init_hidden = nn.ParameterList()
         rnn_input_size = self.rnn_input_size
         for i in range(nlayers):
             self.rnn.append(nn.GRU(input_size=rnn_input_size,
@@ -27,10 +27,8 @@ class EncoderLSTM(nn.Module):
                                    num_layers=2,
                                    bidirectional=self.bidirectional,
                                    dropout=.1))
-            self.init_hidden.append(nn.Parameter(torch.randn(self.directions *2, 1, hidden_size)))
+            self.init_hidden.append(nn.Parameter(torch.randn(self.directions * 2, 1, hidden_size)))
             rnn_input_size = self.hidden_size*4
-        self.init_hidden = nn.ParameterList(self.init_hidden)
-        self.rnn = nn.ModuleList(self.rnn)
 
         # def key/value
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size

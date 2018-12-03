@@ -405,8 +405,15 @@ if __name__ == '__main__':
                 param.requires_grad = False
             dfs_freeze(child)
 
+    def dfs_unfreeze(model):
+        for name, child in model.named_children():
+            for param in child.parameters():
+                param.requires_grad = True
+            dfs_unfreeze(child)
+
     # TODO
     # dfs_freeze(model.encoder)
+    dfs_unfreeze(model.encoder)
 
     def load_my_state_dict(net, state_dict):
         own_state = net.state_dict()
@@ -432,13 +439,13 @@ if __name__ == '__main__':
     utdst = UtteranceDataset(data_path='./data/train.npy', label_path='./data/train_transcripts.npy')
     val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
     test_utdst = UtteranceDataset('./data/test.npy', test=True)
-    loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
+    loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
-    trainer = LanguageModelTrainer(model=model, loader=val_loader, val_loader=val_loader,
+    trainer = LanguageModelTrainer(model=model, loader=loader, val_loader=val_loader,
                                    test_loader=test_loader, max_epochs=NUM_EPOCHS)
 
     trainer.train()
     # trainer.validate()
-    write_results(trainer.test(max_len=190, num_paths=1000))
+    write_results(trainer.test(max_len=90, num_paths=100))
