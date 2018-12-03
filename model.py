@@ -34,7 +34,7 @@ class EncoderLSTM(nn.Module):
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         hidden_size = hidden_size * 2
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -112,7 +112,7 @@ class EncoderCNN(nn.Module):
         # def key/value
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(hidden_size, self.kv_size)
         )
@@ -206,7 +206,7 @@ class DecoderRNN(nn.Module):
         # create scoring
         hidden_size = self.hidden_size * 2 if self.bidirectional else self.hidden_size
         self.scoring = nn.Sequential(
-            nn.BatchNorm1d(hidden_size),
+            # nn.BatchNorm1d(hidden_size),
             nn.Sigmoid(),
             nn.Linear(self.hidden_size, self.num_chars)
         )
@@ -359,8 +359,8 @@ if __name__ == '__main__':
     # targets = [torch.ones(20), torch.ones(1)]
     # las.eval()
     batches = 2
-    targets = [torch.ones(10)] + [torch.ones(9)] * (batches - 1)
-    inputs = [torch.ones((120, 40))] + [torch.ones((90, 40))] * (batches - 1)
+    targets = [torch.ones(10)]# + [torch.ones(9)] * (batches - 1)
+    inputs = [torch.ones((120, 40))]# + [torch.ones((90, 40))] * (batches - 1)
     # scores = las([torch.ones((120, 40)), torch.ones((90, 40))], targets)
     scores = las(inputs, targets)
     scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
