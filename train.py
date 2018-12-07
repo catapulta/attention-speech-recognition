@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
 import character_list
-# import Levenshtein as L
+import Levenshtein as L
 import logging
 from model import LAS2
 import pdb
@@ -379,7 +379,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1
     BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
