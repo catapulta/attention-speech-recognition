@@ -230,11 +230,11 @@ class DecoderRNN(nn.Module):
         # sort list according to target length
         batch_size = len(seq_list)
         lens = [len(s) for s in seq_list]  # lens of all inputs
-        seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
-        keys = torch.stack([keys[:, i] for i in seq_order], dim=1)
-        values = torch.stack([values[:, i] for i in seq_order], dim=1)
-        masks = [masks[i] for i in seq_order]
-        seq_list = [seq_list[i] for i in seq_order]
+        # seq_order = sorted(range(len(lens)), key=lens.__getitem__, reverse=True)
+        # keys = torch.stack([keys[:, i] for i in seq_order], dim=1)
+        # values = torch.stack([values[:, i] for i in seq_order], dim=1)
+        # masks = [masks[i] for i in seq_order]
+        # seq_list = [seq_list[i] for i in seq_order]
         seq_list = rnn.pad_sequence(seq_list, batch_first=True)  # batch_size, max_len, features
         seq_list = seq_list.cuda() if torch.cuda.is_available() else seq_list
 

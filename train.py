@@ -3,7 +3,7 @@ import numpy as np
 from torch.utils.data import DataLoader, Dataset
 import torch.nn.functional as F
 import character_list
-import Levenshtein as L
+# import Levenshtein as L
 import logging
 from model import LAS2
 import pdb
@@ -245,13 +245,12 @@ class LanguageModelTrainer:
 
     def train_batch(self, inputs, targets):
         self.model.train()
-        # input_targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=0)
         scores = self.model(inputs, targets)  # batch_size, seq_len, num_classes
         scores = scores.permute(0, 2, 1)  # batch_size, num_classes, seq_len
         idx = -1 if scores.shape[2] > 1 else None
 
         # compute loss
-        targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)
+        targets = torch.nn.utils.rnn.pad_sequence(targets, batch_first=True, padding_value=-99)  # batch_size, seq_len
         targets = targets.cuda() if torch.cuda.is_available() else targets
         assert targets.shape[1] > 1, 'Targets must have at least 2 entries (including start and end chars)'
         loss = self.criterion(scores[:, :, :idx], targets[:, 1:].long())
@@ -365,19 +364,6 @@ class LanguageModelTrainer:
         return prediction  # batch_size,
 
 
-    # def old_batch(self, data_batch):
-    #     scores, _, out_lengths = model(data_batch)
-    #     out_lengths = torch.Tensor(out_lengths)
-    #     scores = torch.transpose(scores, 0, 1)
-    #     probs = F.softmax(scores, dim=2).data.cpu()
-    #     output, scores, timesteps, out_seq_len = self.decoder.decode(probs=probs, seq_lens=out_lengths)
-    #     out_seq = []
-    #     for i in range(output.size(0)):
-    #         chrs = [character_list.LETTERS[o.item() - 1] for o in output[i, 0, :out_seq_len[i, 0]]]
-    #         out_seq.append("".join(chrs))
-    #     return out_seq
-
-
 def write_results(results):
     with open('predictions.csv', 'w') as f:
         f.write('Id,Predicted\n')
@@ -393,7 +379,7 @@ if __name__ == '__main__':
     tLog, vLog = logger.Logger("./logs/train_pytorch"), logger.Logger("./logs/val_pytorch")
 
     NUM_EPOCHS = 100
-    BATCH_SIZE = 1
+    BATCH_SIZE = 32
     BATCH_SIZE_VAL = 64
 
     model = LAS2(num_chars=32, key_size=128, value_size=256, encoder_depth=3, decoder_depth=2, encoder_hidden=256,
@@ -410,10 +396,6 @@ if __name__ == '__main__':
             for param in child.parameters():
                 param.requires_grad = True
             dfs_unfreeze(child)
-
-    # TODO
-    # dfs_freeze(model.encoder)
-    dfs_unfreeze(model.encoder)
 
     def load_my_state_dict(net, state_dict):
         own_state = net.state_dict()
@@ -436,10 +418,14 @@ if __name__ == '__main__':
         model = load_my_state_dict(model, pretrained_dict)
         print('Checkpoint weights loaded.')
 
+    # TODO
+    # dfs_freeze(model.encoder)
+    dfs_unfreeze(model.encoder)
+
     utdst = UtteranceDataset(data_path='./data/train.npy', label_path='./data/train_transcripts.npy')
     val_utdst = UtteranceDataset(data_path='./data/dev.npy', label_path='./data/dev_transcripts.npy')
     test_utdst = UtteranceDataset('./data/test.npy', test=True)
-    loader = DataLoader(dataset=utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
+    loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate, num_workers=5)
     val_loader = DataLoader(dataset=val_utdst, batch_size=BATCH_SIZE_VAL, shuffle=False, collate_fn=collate, num_workers=5)
     test_loader = DataLoader(dataset=test_utdst, batch_size=1, shuffle=False, collate_fn=collate, num_workers=1)
 
@@ -448,4 +434,4 @@ if __name__ == '__main__':
 
     trainer.train()
     # trainer.validate()
-    write_results(trainer.test(max_len=90, num_paths=100))
+    write_results(trainer.test(max_len=190, num_paths=300))
